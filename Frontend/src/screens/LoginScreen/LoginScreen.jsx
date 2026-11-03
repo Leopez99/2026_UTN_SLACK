@@ -23,10 +23,6 @@ function LoginScreen() {
         console.log('Usuario intenta iniciar sesion', formState)
     }
 
-
-
-    
-    
     return (
         <div>
             <h1>Inciar sesion</h1>
