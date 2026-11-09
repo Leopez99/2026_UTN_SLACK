@@ -1,13 +1,14 @@
 import express from 'express'
+import authMiddleware from '../middlewares/auth.middleware.js'
 
 const channel_router = express.Router({mergeParams: true})
 
 channel_router.get(
     '/',
+    authMiddleware,
     (request, response) => {
-        response.send({
-            ok: true
-            ,
+        response.status(200).send({
+            ok: true,
             message: 'Channel'
         })
     }

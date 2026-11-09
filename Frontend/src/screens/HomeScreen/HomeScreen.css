@@ -186,9 +186,55 @@
   background: #f6f5f9;
 }
 
+/* --- Boton para cambiar de usuario --- */
+
+.home-footer {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 0 24px 56px;
+  display: flex;
+  justify-content: center;
+}
+
+.home-logout {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 18px;
+  border: 1px solid #e8e6ee;
+  border-radius: 999px;
+  background: #fff;
+  color: #616061;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 1px 2px rgba(29, 28, 29, 0.04);
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.home-logout:hover {
+  color: #4a154b;
+  border-color: #d9d3e0;
+  box-shadow: 0 6px 16px rgba(74, 21, 75, 0.1);
+}
+
+.home-logout:active {
+  transform: translateY(1px);
+}
+
+.home-logout:focus-visible {
+  outline: 2px solid #611f69;
+  outline-offset: 2px;
+}
+
 @media (max-width: 600px) {
   .home-content {
-    padding: 28px 16px 48px;
+    padding: 28px 16px 32px;
   }
 
   .home-title {
@@ -197,5 +243,14 @@
 
   .home-card {
     border-radius: 12px;
+  }
+
+  .home-footer {
+    padding: 0 16px 40px;
+  }
+
+  .home-logout {
+    width: 100%;
+    justify-content: center;
   }
 }
