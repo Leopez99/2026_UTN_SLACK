@@ -36,7 +36,7 @@ class MemberRepository {
         //Traer todas las membresias de un usuario
         const result = await Member
         .find({fk_id_usuario: user_id})
-        .select('role fecha_creacion fk_id_espacio_trabajo')
+        .select('rol fecha_creacion fk_id_espacio_trabajo')
         .populate(
             'fk_id_espacio_trabajo',
             'nombre fecha_creacion'
