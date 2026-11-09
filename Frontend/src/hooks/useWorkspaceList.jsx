@@ -1,6 +1,6 @@
 import { useEffect } from "react"
 import useRequest from "./useRequest"
-import { getAllWorkspaces } from "../services/workspaceService"
+import { getAllWorkspaces } from "../services/workspaceServices"
 
 function useWorkspaceList (){
     const { response, error, loading, sendRequest } = useRequest()
