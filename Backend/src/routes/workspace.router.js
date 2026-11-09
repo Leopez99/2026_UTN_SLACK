@@ -18,7 +18,7 @@ workspace_router.get(
     authMiddleware,
     async (request, response) => {
         
-        const workspaces_obtenidos = await member_repository.getAllWorkspaceByUserId(request.user.id)
+        const workspaces_obtenidos = await member_repository.getAllWorkspaceByUserId(request.user._id)
         return response.status(200).send({
             ok:true,
             message: "Obtenidos todos los datos",
