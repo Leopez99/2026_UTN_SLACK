@@ -3,6 +3,9 @@ import { Route, Routes } from 'react-router'
 import HomeScreeen from './screens/HomeScreen/HomeScreeen'
 import LoginScreen from './screens/LoginScreen/LoginScreen'
 import RegisterScreen from './screens/RegisterScreen/RegisterScreen'
+import VerifyEmailScreen from './screens/VerifyEmailScreen/VerifyEmailScreen'
+import ForgotPasswordScreen from './screens/ForgotPasswordScreen/ForgotPasswordScreen'
+import ResetPasswordScreen from './screens/ResetPasswordScreen/ResetPasswordScreen'
 import AuthMiddleware from './Middlewares/AuthMiddleware'
 
 const App = () => {
@@ -22,6 +25,9 @@ const App = () => {
       </Route>
       <Route path='/login' element={<LoginScreen/>}/>
       <Route path='/register' element={<RegisterScreen/>} />
+      <Route path='/verify-email' element={<VerifyEmailScreen/>} />
+      <Route path='/forgot-password' element={<ForgotPasswordScreen/>} />
+      <Route path='/reset-password' element={<ResetPasswordScreen/>} />
     </Routes>
   )
 }

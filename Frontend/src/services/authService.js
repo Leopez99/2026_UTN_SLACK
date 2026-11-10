@@ -55,3 +55,76 @@ export async function  register(username, email, password) {
     }
     return response_body
 }
+
+
+/* 
+El token de verificacion llega por querystring desde el link del mail
+*/
+export async function verifyEmail (verification_token) {
+    const response_http = await fetch(
+        API_URL + '/api/auth/verify-email?verification_token=' + encodeURIComponent(verification_token),
+        {
+            method: 'GET'
+        }
+    )
+    const response_body = await response_http.json()
+
+    if(!response_body.ok){
+        throw new Error(response_body.message)
+    }
+
+    return response_body
+}
+
+
+/*
+Solicitud de restablecimiento: el backend envia el mail solo si el usuario existe.
+*/
+export async function forgotPassword (email) {
+    const response_http = await fetch(
+        API_URL + '/api/auth/forgot-password',
+        {
+            method: 'POST',
+            headers: {
+                'Content-Type': "application/json"
+            },
+            body: JSON.stringify({
+                email: email
+            })
+        }
+    )
+    const response_body = await response_http.json()
+
+    if(!response_body.ok){
+        throw new Error(response_body.message)
+    }
+
+    return response_body
+}
+
+
+/*
+El token de restablecimiento llega por querystring desde el link del mail
+*/
+export async function resetPassword (reset_token, new_password) {
+    const response_http = await fetch(
+        API_URL + '/api/auth/reset-password',
+        {
+            method: 'POST',
+            headers: {
+                'Content-Type': "application/json"
+            },
+            body: JSON.stringify({
+                reset_token: reset_token,
+                new_password: new_password
+            })
+        }
+    )
+    const response_body = await response_http.json()
+
+    if(!response_body.ok){
+        throw new Error(response_body.message)
+    }
+
+    return response_body
+}

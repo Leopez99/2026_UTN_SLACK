@@ -79,6 +79,9 @@ return (
                         value={formState.password}
                         onChange={handleChangeInput}
                     />
+                    <Link className="login-forgot-link" to='/forgot-password'>
+                        ¿Olvidaste tu contraseña?
+                    </Link>
                     {error && !loading && (
                         <p className="login-message login-message-error">{error}</p>
                     )}
