@@ -5,33 +5,40 @@ import ENVIRONMENT from '../config/environment.config.js'
 const auth_router = express.Router()
 
 /* 
-Validacion del email del usuario
+(Unauthentified) POST /api/auth/register
+    Registro de usuario. Valida los datos recibidos y envia un mail de verificacion de email
 */
 auth_router.post('/register', register)
 
 /* 
-Cuando un usuario inicia sesion debemos crear de alguna forma la sesion
+(Unauthentified) POST /api/auth/login
+    Inicio de sesion: valida las credenciales y devuelve el token de autenticacion del usuario
 */
 auth_router.post('/login', login)
 
 /* 
-El token de verificacion viaja por querystring: /api/auth/verify-email?verification_token=...
+(Unauthentified) GET /api/auth/verify-email
+    Verificacion del email del usuario. El token de verificacion viaja por querystring:
+    /api/auth/verify-email?verification_token=...
 */
 auth_router.get('/verify-email',  verifyEmail)
 
 /*
-Solicitud de restablecimiento de contraseña: recibe el email y envia el mail con el token.
+(Unauthentified) POST /api/auth/forgot-password
+    Solicitud de restablecimiento de contraseña: recibe el email y envia el mail con el token
 */
 auth_router.post('/forgot-password', forgotPassword)
 
 /*
-Restablecimiento de contraseña: recibe el token del mail y la nueva password.
+(Unauthentified) POST /api/auth/reset-password
+    Restablecimiento de contraseña: recibe el token del mail y la nueva password
 */
 auth_router.post('/reset-password', resetPassword)
 
 /* 
-Compatibilidad con links viejos que traian el token en el path.
-Los redirigimos al frontend para que la screen de verificacion lo procese.
+(Unauthentified) GET /api/auth/verify-email/:verify_email_token
+    Compatibilidad con links viejos que traian el token en el path.
+    Los redirigimos al frontend para que la screen de verificacion lo procese
 */
 auth_router.get('/verify-email/:verify_email_token', (request, response) => {
     response.redirect(

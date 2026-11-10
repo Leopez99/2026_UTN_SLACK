@@ -30,6 +30,11 @@ workspace_router.get(
     }
 )
 
+/* 
+(Authentified) POST /api/workspace
+    Crear un nuevo espacio de trabajo con el nombre y la descripcion enviados en el body.
+    El usuario que lo crea queda automaticamente como miembro con rol 'owner'
+*/
 workspace_router.post(
     '/',
     authMiddleware,
@@ -60,6 +65,11 @@ workspace_router.post(
     }
 )
 
+/* 
+(todos) GET /api/workspace/:workspace_id
+    Traer los datos del espacio de trabajo seleccionado.
+    Solo un miembro de ese espacio de trabajo puede consultarlo
+*/
 workspace_router.get(
     '/:workspace_id', 
     authMiddleware,
@@ -78,6 +88,10 @@ workspace_router.get(
     }
 )
 
+/* 
+(owner) DELETE /api/workspace/:workspace_id
+    Eliminar el espacio de trabajo seleccionado y todas las membresias asociadas a el
+*/
 workspace_router.delete(
     '/:workspace_id',
     authMiddleware,
@@ -96,6 +110,10 @@ workspace_router.delete(
     }
 )
 
+/* 
+(owner, admin) PUT /api/workspace/:workspace_id
+    Actualizar el nombre y la descripcion del espacio de trabajo seleccionado (ambos campos son requeridos)
+*/
 workspace_router.put(
     '/:workspace_id',
     authMiddleware,
