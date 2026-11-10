@@ -34,7 +34,6 @@ workspace_router.post(
     '/',
     authMiddleware,
     async (request, response) => {
-        //Quien carancho quiere hacer esta operacion ?????
         console.log('[CREATE WORKSPACE]', request.user)
         const {name, description} = request.body
 
@@ -124,43 +123,24 @@ workspace_router.put(
     }
 )
 
-
 /* 
-Crear los endpoints 
-
-EJERCITACION PARA AHORA
-- (owner) DELETE /api/workspace/:workspace_id => Elimina espacio de trabajo (HECHO)
-- (owner, admin) PUT /api/workspace/:workspace_id => Actualizar nombre/descripcion del espacio de trabajo
-
-Tarea:
-- (todos) get /api/workspace/:workspace_id/members
-- (owner, admin) DELETE /api/workspace/:workspace_id/members/:member_id
-- (owner, admin) POST /api/workspace/:workspace_id/members/invite
-    body: email (el email del usuario a invitar)
-    - Revisar que el rol con el que se crea sea 'admin' o 'user'
-    - Revisar que el usuario a invitar exista
-    - Revisar que no este ya agregado al workspace (que tenga una membresia)
-    - Crear la membresia con una propiedad 'invitacion_aceptada': false
-    - Enviar un mail con un link para "aceptar invitacion" (debe tener una expiracion y debe enviar un token)
-        - Ese link hara un GET hacia /api/workspace/:workspace_id/members/accept-invite/:invitation_token
-
-- (todos) Unauthentified /api/workspace/:workspace_id/members/accept-invite/:invitation_token
-    - Verifica que el invitation_token sea valido y edita la membersia para marcar que lo acepto
+(todos) GET /api/workspace/:workspace_id/members
+    Traer la lista de miembros de un workspace
 */
+workspace_router.get(
+    '/:workspace_id/members',
+    authMiddleware,
+    workspaceMiddleware([]),   // [] = cualquier miembro puede verla
+    async (request, response) => {
+        const members = await member_repository.getAllMembershipsByWorkspaceId(request.workspace._id)
 
-
-
-
-
-/* workspace_router.use(
-    '/:workspace_id/channels', 
-    channel_router
-) */
+        return response.status(200).send({
+            ok: true,
+            message: "Miembros obtenidos correctamente",
+            status: 200,
+            data: { members }
+        })
+    }
+)
 
 export default workspace_router
-
-
-/* 
-/api/workspace/:workspace_id/channels
-
-*/

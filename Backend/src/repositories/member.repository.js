@@ -56,11 +56,23 @@ class MemberRepository {
     }
 
     //Traer todos miembros de un espacio de trabajo
-    async getAllMembershipsByWorkspaceId(workspace_id){
+    async getAllMembershipsByWorkspaceId(workspace_id) {
         const result = await Member
-        .find({fk_id_espacio_trabajo: workspace_id})
-        .populate('fk_id_usuario', 'nombre email')
-        console.log(result)
+            .find({ fk_id_espacio_trabajo: workspace_id })
+            .populate('fk_id_usuario', 'nombre email')
+
+        return result.map(membership => {
+            return {
+                member_id: membership._id,
+                member_rol: membership.rol,
+                fecha_creacion: membership.fecha_creacion,
+                usuario: {
+                    id: membership.fk_id_usuario._id,
+                    nombre: membership.fk_id_usuario.nombre,
+                    email: membership.fk_id_usuario.email
+                }
+            }
+        })
     }
 
     async getMembershipByUserAndWorkspace (user_id, workspace_id){
@@ -72,6 +84,11 @@ class MemberRepository {
     async deleteAllMembershipsByWorkspaceId(workspace_id){
         await Member.deleteMany({fk_id_espacio_trabajo: workspace_id})
     }
+
+    
 }
+
+
+
 const member_repository = new MemberRepository()
 export default member_repository
