@@ -55,7 +55,7 @@ workspace_router.post(
             {
                 ok: true, 
                 status: 201,
-                message: "Por ahora todo bien",
+                message: "Workspace creado",
                 data: {
                     workspace_created,
                     owner_membership
