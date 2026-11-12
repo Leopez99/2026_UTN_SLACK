@@ -1,9 +1,13 @@
 import express from 'express'
-import workspace_repository from '../repositories/workspace.repository.js'
-import member_repository from '../repositories/member.repository.js'
+import {
+    createWorkspace,
+    deleteWorkspace,
+    getWorkspaceById,
+    getWorkspaceMembers,
+    getWorkspaces,
+    updateWorkspace
+} from '../controllers/workspace.controller.js'
 import authMiddleware from '../middlewares/auth.middleware.js'
-import channel_router from './channels.router.js'
-import ServerError from '../utils/error.util.js'
 import workspaceMiddleware from '../middlewares/workspace.middleware.js'
 
 const workspace_router = express.Router()
@@ -16,18 +20,7 @@ const workspace_router = express.Router()
 workspace_router.get(
     '/',
     authMiddleware,
-    async (request, response) => {
-        
-        const workspaces_obtenidos = await member_repository.getAllWorkspaceByUserId(request.user.id)
-        return response.status(200).send({
-            ok:true,
-            message: "Obtenidos todos los datos",
-            status: 200,
-            data: {
-                workspaces: workspaces_obtenidos
-            }
-        })
-    }
+    getWorkspaces
 )
 
 /* 
@@ -38,31 +31,7 @@ workspace_router.get(
 workspace_router.post(
     '/',
     authMiddleware,
-    async (request, response) => {
-        console.log('[CREATE WORKSPACE]', request.user)
-        const {name, description} = request.body
-
-
-
-        const workspace_created = await workspace_repository.createWorkspace(name, description)
-        const owner_membership = await member_repository.create(
-            request.user.id,
-            workspace_created._id,
-            'owner'
-        )
-
-        return response.status(201).send(
-            {
-                ok: true, 
-                status: 201,
-                message: "Workspace creado",
-                data: {
-                    workspace_created,
-                    owner_membership
-                }
-            }
-        )
-    }
+    createWorkspace
 )
 
 /* 
@@ -71,21 +40,10 @@ workspace_router.post(
     Solo un miembro de ese espacio de trabajo puede consultarlo
 */
 workspace_router.get(
-    '/:workspace_id', 
+    '/:workspace_id',
     authMiddleware,
     workspaceMiddleware([]),
-    async (request, response) => {
-        
-
-        return response.status(200).send({
-            ok: true,
-            message: "Workspace obtenido correctamente",
-            status: 200,
-            data: {
-                workspace_selected: request.workspace
-            }
-        })
-    }
+    getWorkspaceById
 )
 
 /* 
@@ -96,18 +54,7 @@ workspace_router.delete(
     '/:workspace_id',
     authMiddleware,
     workspaceMiddleware(['owner']),
-    async (request, response) => {
-        await  workspace_repository.deleteById(request.workspace._id)
-        await member_repository.deleteAllMembershipsByWorkspaceId(request.workspace._id)
-        return response.status(200).send({
-            ok: true,
-            message: "Workspace eliminado correctamente",
-            status: 200,
-            data: {
-                workspace_deleted: request.workspace
-            }
-        })
-    }
+    deleteWorkspace
 )
 
 /* 
@@ -118,27 +65,7 @@ workspace_router.put(
     '/:workspace_id',
     authMiddleware,
     workspaceMiddleware(['owner', 'admin']),
-    async (request, response) => {
-        const { workspace_id } = request.params
-        const { name, description } = request.body
-
-        if(!name || !description){
-            throw new ServerError("name y description son campos requeridos", 400)
-        }
-
-        const workspace_updated = await workspace_repository.updateById(
-            workspace_id, 
-            { nombre: name, description }
-        )
-        return response.status(200).send({
-            ok: true,
-            message: "Workspace actualizado correctamente",
-            status: 200,
-            data: {
-                workspace_updated
-            }
-        })
-    }
+    updateWorkspace
 )
 
 /* 
@@ -149,16 +76,7 @@ workspace_router.get(
     '/:workspace_id/members',
     authMiddleware,
     workspaceMiddleware([]),   // [] = cualquier miembro puede verla
-    async (request, response) => {
-        const members = await member_repository.getAllMembershipsByWorkspaceId(request.workspace._id)
-
-        return response.status(200).send({
-            ok: true,
-            message: "Miembros obtenidos correctamente",
-            status: 200,
-            data: { members }
-        })
-    }
+    getWorkspaceMembers
 )
 
 export default workspace_router
