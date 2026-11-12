@@ -51,12 +51,15 @@ export async function createWorkspace(request, response) {
 
 export async function getWorkspaceById(request, response) {
 
+    const members = await member_repository.getAllMembershipsByWorkspaceId(request.workspace._id)
+
     return response.status(200).send({
         ok: true,
         message: "Workspace obtenido correctamente",
         status: 200,
         data: {
-            workspace_selected: request.workspace
+            workspace_selected: request.workspace,
+            members
         }
     })
 }

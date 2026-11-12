@@ -1,9 +1,7 @@
-import { useNavigate } from 'react-router'
 import WorkspaceList from '../../Components/WorkspaceList/WorkspaceList'
 import './HomeScreen.css'
 
 function HomeScreeen() {
-  const navigate = useNavigate()
 
   return (
     <div className="home-screen">
@@ -24,20 +22,9 @@ function HomeScreeen() {
           </p>
         </div>
 
-        <section className="home-card">
-          <WorkspaceList />
-        </section>
+        <WorkspaceList />
 
       </main>
-        <footer className="home-footer">
-            <button
-                className="home-logout"
-                type='button'
-                onClick={() => navigate('/login')}
-            >
-                Logearse con otro usuario
-            </button>
-        </footer>
     </div>
   )
 }

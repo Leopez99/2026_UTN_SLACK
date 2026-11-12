@@ -1,0 +1,236 @@
+/* WorkspaceList: tarjeta con la lista de espacios de trabajo estilo Slack */
+
+.workspace-card {
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #e8e6ee;
+  border-radius: 14px;
+  box-shadow:
+    0 1px 2px rgba(29, 28, 29, 0.04),
+    0 12px 28px rgba(74, 21, 75, 0.06);
+}
+
+/* --- Pestaña superior --- */
+
+.workspace-card-tabs {
+  display: flex;
+  padding: 0 20px;
+  border-bottom: 1px solid #e8e6ee;
+}
+
+.workspace-card-tab {
+  padding: 15px 0 12px;
+  border-bottom: 2px solid #4a154b;
+  color: #1d1c1d;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* --- Contenido --- */
+
+.workspace-card-body {
+  padding: 18px 20px 22px;
+}
+
+.workspace-card-eyebrow {
+  margin: 0 0 10px;
+  color: #616061;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.workspace-row-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+/* --- Fila de cada espacio de trabajo --- */
+
+.workspace-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 8px;
+  border-radius: 8px;
+  color: inherit;
+  text-decoration: none;
+  transition: background 0.15s ease;
+}
+
+.workspace-row:hover {
+  background: #f6f5f9;
+}
+
+.workspace-row:focus-visible {
+  outline: 2px solid #611f69;
+  outline-offset: -2px;
+}
+
+.workspace-row-logo {
+  flex: 0 0 46px;
+  width: 46px;
+  height: 46px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.workspace-row-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.workspace-row-name {
+  margin: 0;
+  color: #1d1c1d;
+  font-size: 17px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspace-row-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.workspace-row-avatars {
+  display: flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.workspace-row-avatar {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  box-shadow: 0 0 0 2px #fff;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.workspace-row-avatar + .workspace-row-avatar {
+  margin-left: -5px;
+}
+
+.workspace-row-count {
+  color: #616061;
+  font-size: 13px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.workspace-row-active {
+  color: #1d1c1d;
+  font-weight: 600;
+}
+
+.workspace-row-arrow {
+  margin-left: auto;
+  padding-left: 12px;
+  color: #1d1c1d;
+  font-size: 20px;
+  line-height: 1;
+}
+
+/* --- Pie: crear un nuevo espacio de trabajo / cambiar de usuario --- */
+
+.workspace-card-footer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 14px 20px;
+  border-top: 1px solid #e8e6ee;
+  background: #fbfafc;
+}
+
+.workspace-card-create,
+.workspace-card-logout {
+  padding: 0;
+  border: none;
+  background: none;
+  color: #1264a3;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.workspace-card-create:hover,
+.workspace-card-logout:hover {
+  text-decoration: underline;
+}
+
+.workspace-card-create:focus-visible,
+.workspace-card-logout:focus-visible {
+  outline: 2px solid #611f69;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* --- Estados de carga / error / vacio --- */
+
+.workspace-card-state {
+  display: block;
+  margin: 0;
+  padding: 22px 0;
+  text-align: center;
+  font-size: 14px;
+  color: #616061;
+}
+
+.workspace-card .error-text {
+  display: block;
+  color: #e01e5a;
+}
+
+.workspace-card-retry {
+  display: block;
+  margin: 12px auto 0;
+  padding: 7px 16px;
+  border: 1px solid #e8e6ee;
+  border-radius: 8px;
+  background: #fff;
+  color: #1d1c1d;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.workspace-card-retry:hover {
+  background: #f6f5f9;
+}
+
+@media (max-width: 600px) {
+  .workspace-card {
+    border-radius: 12px;
+  }
+
+  .workspace-card-body {
+    padding: 16px 14px 18px;
+  }
+
+  .workspace-row-name {
+    font-size: 16px;
+  }
+
+  .workspace-row-arrow {
+    font-size: 18px;
+  }
+}

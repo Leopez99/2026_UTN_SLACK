@@ -1,0 +1,235 @@
+/* CreateWorkspaceScreen: formulario para crear un espacio de trabajo */
+
+.create-workspace-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  background: #f6f5f9;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  color: #1d1c1d;
+  box-sizing: border-box;
+}
+
+.create-workspace-screen *,
+.create-workspace-screen *::before,
+.create-workspace-screen *::after {
+  box-sizing: border-box;
+}
+
+.create-workspace-card {
+  width: 100%;
+  max-width: 520px;
+  padding: 30px 32px 28px;
+  background: #fff;
+  border: 1px solid #e8e6ee;
+  border-radius: 14px;
+  box-shadow:
+    0 1px 2px rgba(29, 28, 29, 0.04),
+    0 12px 28px rgba(74, 21, 75, 0.06);
+}
+
+.create-workspace-card-status {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.create-workspace-header {
+  margin-bottom: 22px;
+}
+
+.create-workspace-back {
+  display: inline-block;
+  margin-bottom: 14px;
+  color: #616061;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.create-workspace-back:hover {
+  color: #4a154b;
+}
+
+.create-workspace-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.4px;
+}
+
+.create-workspace-subtitle {
+  margin: 8px 0 0;
+  color: #616061;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.create-workspace-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.create-workspace-label {
+  margin-bottom: 6px;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.create-workspace-label-optional {
+  color: #616061;
+  font-weight: 500;
+}
+
+.create-workspace-input,
+.create-workspace-textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #e8e6ee;
+  border-radius: 8px;
+  background: #fff;
+  color: #1d1c1d;
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.create-workspace-textarea {
+  resize: vertical;
+  min-height: 110px;
+  line-height: 1.45;
+}
+
+.create-workspace-input + .create-workspace-label {
+  margin-top: 18px;
+}
+
+.create-workspace-input::placeholder,
+.create-workspace-textarea::placeholder {
+  color: #9b98a1;
+}
+
+.create-workspace-input:hover,
+.create-workspace-textarea:hover {
+  border-color: #d9d3e0;
+}
+
+.create-workspace-input:focus,
+.create-workspace-textarea:focus {
+  border-color: #611f69;
+  box-shadow: 0 0 0 3px rgba(97, 31, 105, 0.12);
+}
+
+.create-workspace-counter {
+  align-self: flex-end;
+  margin-top: 4px;
+  color: #9b98a1;
+  font-size: 11px;
+}
+
+.create-workspace-message {
+  margin: 12px 0 0;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.create-workspace-message-error {
+  color: #e01e5a;
+}
+
+.create-workspace-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  margin-top: 22px;
+}
+
+.create-workspace-cancel {
+  color: #616061;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.create-workspace-cancel:hover {
+  color: #1d1c1d;
+  text-decoration: underline;
+}
+
+.create-workspace-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 18px;
+  border: none;
+  border-radius: 6px;
+  background: #4a154b;
+  color: #fff;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.create-workspace-button:hover {
+  background: #611f69;
+}
+
+.create-workspace-button:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.create-workspace-button:focus-visible,
+.create-workspace-cancel:focus-visible,
+.create-workspace-back:focus-visible {
+  outline: 2px solid #611f69;
+  outline-offset: 2px;
+}
+
+/* --- Estado de exito --- */
+
+.create-workspace-icon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 16px;
+  border-radius: 50%;
+  background: #eaf6ef;
+  color: #2bac76;
+}
+
+.create-workspace-card-status .create-workspace-subtitle {
+  margin-bottom: 22px;
+}
+
+@media (max-width: 600px) {
+  .create-workspace-card {
+    padding: 24px 18px 22px;
+    border-radius: 12px;
+  }
+
+  .create-workspace-title {
+    font-size: 21px;
+  }
+
+  .create-workspace-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .create-workspace-cancel {
+    text-align: center;
+  }
+}
