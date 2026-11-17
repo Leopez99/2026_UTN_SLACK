@@ -610,6 +610,7 @@ const openapi_document = {
                                         member_rol: 'owner',
                                         workspace_id: '6ab01f9a190ff6061955c88a',
                                         workspace_nombre: 'Equipo Backend',
+                                        workspace_descripcion: 'Canal de trabajo del equipo de backend',
                                         workspace_fecha_creacion: '2026-09-17T14:56:26.249Z'
                                     }
                                 ]
@@ -1241,6 +1242,11 @@ const openapi_document = {
                     workspace_nombre: {
                         type: 'string',
                         example: 'Equipo Backend'
+                    },
+                    workspace_descripcion: {
+                        type: 'string',
+                        description: 'Descripción del workspace. Puede no estar presente si el workspace no tiene descripción.',
+                        example: 'Canal de trabajo del equipo de backend'
                     },
                     workspace_fecha_creacion: {
                         type: 'string',

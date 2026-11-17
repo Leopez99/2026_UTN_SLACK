@@ -25,9 +25,10 @@ class MemberRepository {
     formato: 
         {
             member_id,
-            member_role,
+            member_rol,
             workspace_id,
-            workspace_name
+            workspace_nombre,
+            workspace_descripcion,
             workspace_fecha_creacion
         }
 
@@ -39,7 +40,7 @@ class MemberRepository {
         .select('rol fecha_creacion fk_id_espacio_trabajo')
         .populate(
             'fk_id_espacio_trabajo',
-            'nombre fecha_creacion'
+            'nombre description fecha_creacion'
         )
 
         return result.map(
@@ -49,6 +50,7 @@ class MemberRepository {
                     member_rol: membership.rol,
                     workspace_id: membership.fk_id_espacio_trabajo._id,
                     workspace_nombre: membership.fk_id_espacio_trabajo.nombre,
+                    workspace_descripcion: membership.fk_id_espacio_trabajo.description,
                     workspace_fecha_creacion: membership.fk_id_espacio_trabajo.fecha_creacion
                 }
             }

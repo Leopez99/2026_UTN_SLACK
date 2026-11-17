@@ -7,6 +7,7 @@ import VerifyEmailScreen from './screens/VerifyEmailScreen/VerifyEmailScreen'
 import ForgotPasswordScreen from './screens/ForgotPasswordScreen/ForgotPasswordScreen'
 import ResetPasswordScreen from './screens/ResetPasswordScreen/ResetPasswordScreen'
 import CreateWorkspaceScreen from './screens/CreateWorkspaceScreen/CreateWorkspaceScreen'
+import WorkspaceScreen from './screens/WorkspaceScreen/WorkspaceScreen'
 import AuthMiddleware from './Middlewares/AuthMiddleware'
 
 const App = () => {
@@ -25,6 +26,10 @@ const App = () => {
         <Route 
           path='/create-workspace' 
           element={<CreateWorkspaceScreen/>}
+        />
+        <Route 
+          path='/workspace/:workspace_id' 
+          element={<WorkspaceScreen/>}
         />
 
       </Route>
