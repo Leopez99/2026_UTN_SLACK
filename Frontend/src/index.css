@@ -1,3 +1,12 @@
+/* Reset mínimo: sin márgenes del navegador y sin scroll de página
+   dentro de las pantallas que ocupan todo el viewport */
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
 /* Variables globales de diseño */
 
 :root {

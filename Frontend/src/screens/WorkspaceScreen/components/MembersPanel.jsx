@@ -1,5 +1,5 @@
 import Avatar from './Avatar'
-import { IconSearch } from './Icons'
+import { IconClose, IconSearch } from './Icons'
 
 const ROLE_GROUPS = [
   { rol: 'owner', label: 'Dueño' },
@@ -25,16 +25,30 @@ function getMemberStatus(member) {
   return ['online', 'online', 'idle', 'offline'][hash % 4]
 }
 
-function MembersPanel({ members = [] }) {
+function MembersPanel({ members = [], is_open = false, on_close }) {
   const members_count = members.length
 
   return (
-    <aside className="ws-members" aria-label="Miembros del espacio de trabajo">
+    <aside
+      id="ws-members-panel"
+      className={is_open ? 'ws-members ws-members-open' : 'ws-members'}
+      aria-label="Miembros del espacio de trabajo"
+    >
 
       <header className="ws-members-header">
         <span className="ws-members-title">
           Miembros — {members_count}
         </span>
+
+        <button
+          type="button"
+          className="ws-icon-button ws-members-close"
+          title="Cerrar miembros"
+          aria-label="Cerrar miembros"
+          onClick={on_close}
+        >
+          <IconClose size={20} />
+        </button>
       </header>
 
       <div className="ws-members-search">

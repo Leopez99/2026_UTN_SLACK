@@ -5,11 +5,21 @@ const channelSchema = new mongoose.Schema(
     {
         nombre: {
             type: String,
-            required: true
+            required: true,
+            maxlength: 60,
+            trim: true
         },
         descripcion: {
             type: String,
-            maxlength: 1000
+            maxlength: 1000,
+            trim: true
+        },
+        /* Categoria del canal (por ejemplo "Canales de texto").
+           Opcional: si no se define, el canal se muestra suelto en la UI. */
+        categoria: {
+            type: String,
+            maxlength: 60,
+            trim: true
         },
         fk_id_espacio_trabajo: {
             type: mongoose.Schema.Types.ObjectId,

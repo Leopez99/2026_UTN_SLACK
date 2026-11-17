@@ -9,6 +9,7 @@ import {
 } from '../controllers/workspace.controller.js'
 import authMiddleware from '../middlewares/auth.middleware.js'
 import workspaceMiddleware from '../middlewares/workspace.middleware.js'
+import channel_router from './channels.router.js'
 
 const workspace_router = express.Router()
 
@@ -77,6 +78,18 @@ workspace_router.get(
     authMiddleware,
     workspaceMiddleware([]),   // [] = cualquier miembro puede verla
     getWorkspaceMembers
+)
+
+/* 
+Canales del espacio de trabajo.
+El router de canales valida la membresia y el rol de cada operacion.
+    GET    /api/workspaces/:workspace_id/channels
+    POST   /api/workspaces/:workspace_id/channels            (owner, admin)
+    DELETE /api/workspaces/:workspace_id/channels/:channel_id (owner, admin)
+*/
+workspace_router.use(
+    '/:workspace_id/channels',
+    channel_router
 )
 
 export default workspace_router

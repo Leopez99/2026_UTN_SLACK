@@ -1,12 +1,9 @@
 import Avatar from './Avatar'
 import {
-  IconBell,
   IconGif,
-  IconGift,
   IconHash,
-  IconHelp,
+  IconMenu,
   IconMore,
-  IconPin,
   IconReply,
   IconSearch,
   IconSend,
@@ -114,16 +111,49 @@ function MessageActions() {
   )
 }
 
-function ChatArea({ channel, messages = [], members_count = 0 }) {
+function ChatArea({
+  channel,
+  messages = [],
+  members_count = 0,
+  channels_open = false,
+  members_open = false,
+  on_toggle_channels,
+  on_toggle_members
+}) {
   const timeline = buildTimeline(messages)
   const channel_name = channel?.canal_nombre || 'canal'
   const channel_description = channel?.canal_descripcion || ''
+
+  if (!channel) {
+    return (
+      <section className="ws-chat" aria-label="Espacio sin canales">
+        <div className="ws-chat-placeholder">
+          <h2 className="ws-chat-placeholder-title">Este espacio todavía no tiene canales</h2>
+          <p className="ws-chat-placeholder-text">
+            Cuando se cree un canal va a aparecer acá.
+          </p>
+        </div>
+      </section>
+    )
+  }
 
   return (
     <section className="ws-chat" aria-label={`Canal ${channel_name}`}>
 
       <header className="ws-chat-header">
         <div className="ws-chat-heading">
+          <button
+            type="button"
+            className="ws-icon-button ws-header-menu"
+            title="Ver canales"
+            aria-label="Ver canales"
+            aria-controls="ws-channel-sidebar"
+            aria-expanded={channels_open}
+            onClick={on_toggle_channels}
+          >
+            <IconMenu size={22} />
+          </button>
+
           <IconHash size={22} className="ws-chat-hash" />
           <h1 className="ws-chat-title">{channel_name}</h1>
 
@@ -141,17 +171,16 @@ function ChatArea({ channel, messages = [], members_count = 0 }) {
           <button type="button" className="ws-icon-button" title="Buscar en el canal" aria-label="Buscar en el canal">
             <IconSearch size={20} />
           </button>
-          <button type="button" className="ws-icon-button" title="Notificaciones" aria-label="Notificaciones">
-            <IconBell size={20} />
-          </button>
-          <button type="button" className="ws-icon-button" title="Mensajes fijados" aria-label="Mensajes fijados">
-            <IconPin size={20} />
-          </button>
-          <button type="button" className="ws-icon-button" title={`Miembros del espacio (${members_count})`} aria-label={`Miembros del espacio (${members_count})`}>
+          <button
+            type="button"
+            className="ws-icon-button ws-members-toggle"
+            title={`Miembros del espacio (${members_count})`}
+            aria-label={`Miembros del espacio (${members_count})`}
+            aria-controls="ws-members-panel"
+            aria-expanded={members_open}
+            onClick={on_toggle_members}
+          >
             <IconUsers size={20} />
-          </button>
-          <button type="button" className="ws-icon-button" title="Ayuda" aria-label="Ayuda">
-            <IconHelp size={20} />
           </button>
         </div>
       </header>
@@ -217,6 +246,12 @@ function ChatArea({ channel, messages = [], members_count = 0 }) {
             )
           })}
 
+          {timeline.length === 0 && (
+            <p className="ws-chat-empty">
+              Todavía no hay mensajes en este canal.
+            </p>
+          )}
+
         </div>
       </div>
 
@@ -236,9 +271,6 @@ function ChatArea({ channel, messages = [], members_count = 0 }) {
           <div className="ws-composer-actions">
             <button type="button" className="ws-icon-button" title="Emoji" aria-label="Emoji">
               <IconSmile size={20} />
-            </button>
-            <button type="button" className="ws-icon-button" title="Regalo" aria-label="Regalo">
-              <IconGift size={20} />
             </button>
             <button type="button" className="ws-icon-button" title="GIF" aria-label="GIF">
               <IconGif size={20} />

@@ -630,6 +630,8 @@ const openapi_document = {
                 description: [
                     'Crea un workspace con los datos del body. El usuario autenticado queda automáticamente como miembro con rol `owner`.',
                     '',
+                    'Además se crea automáticamente el canal `General` dentro del espacio. Si la creación de la membresía o del canal falla, el espacio se elimina para no quedar a medio armar.',
+                    '',
                     'No hay validación manual del body: se delega en el schema de Mongoose. Si falta `name`, supera los 30 caracteres o `description` supera los 1000, Mongoose lanza un `ValidationError` que la API responde como `500`.'
                 ].join('\n'),
                 security: [{ bearerAuth: [] }],
@@ -647,7 +649,7 @@ const openapi_document = {
                 },
                 responses: {
                     201: success_response(
-                        'Workspace creado y membresía de owner generada.',
+                        'Workspace creado, membresía de owner generada y canal General creado.',
                         { $ref: '#/components/schemas/CreateWorkspaceResponse' },
                         {
                             ok: true,
@@ -669,6 +671,13 @@ const openapi_document = {
                                     fecha_creacion: '2026-09-17T14:56:26.249Z',
                                     activo: false,
                                     __v: 0
+                                },
+                                default_channel: {
+                                    canal_id: '6ab01f9a190ff6061955c8a0',
+                                    canal_nombre: 'General',
+                                    canal_descripcion: 'Canal general del espacio de trabajo',
+                                    categoria: null,
+                                    fecha_creacion: '2026-09-17T14:56:26.249Z'
                                 }
                             }
                         }
@@ -813,7 +822,7 @@ const openapi_document = {
                 summary: 'Eliminar un espacio de trabajo',
                 operationId: 'deleteWorkspace',
                 description: [
-                    'Elimina el workspace y todas sus membresías asociadas.',
+                    'Elimina el workspace, todas sus membresías, sus canales y los mensajes de esos canales.',
                     '',
                     'Solo puede hacerlo un miembro con rol `owner`.'
                 ].join('\n'),
@@ -823,7 +832,7 @@ const openapi_document = {
                 ],
                 responses: {
                     200: success_response(
-                        'Workspace eliminado junto con sus membresías.',
+                        'Workspace eliminado junto con sus membresías, canales y mensajes.',
                         { $ref: '#/components/schemas/DeleteWorkspaceResponse' },
                         {
                             ok: true,
@@ -919,29 +928,185 @@ const openapi_document = {
         /* CHANNELS                                                      */
         /* ------------------------------------------------------------ */
 
-        '/api/channels': {
+        '/api/workspaces/{workspace_id}/channels': {
             get: {
                 tags: ['Channels'],
-                summary: 'Listar canales (endpoint de prueba)',
+                summary: 'Listar los canales de un espacio de trabajo',
                 operationId: 'getChannels',
                 description: [
-                    'Endpoint de prueba que hoy solo devuelve un mensaje fijo, sin datos.',
+                    'Devuelve los canales del workspace ordenados por fecha de creación.',
                     '',
-                    'El router está preparado con `mergeParams: true` para montarse también como `/api/workspaces/{workspace_id}/channels`, pero esa ruta todavía no está registrada en la aplicación.'
+                    'Requiere ser miembro del workspace (cualquier rol). El canal `General` se crea automáticamente al crear el espacio.'
                 ].join('\n'),
                 security: [{ bearerAuth: [] }],
+                parameters: [
+                    { $ref: '#/components/parameters/WorkspaceId' }
+                ],
                 responses: {
                     200: success_response(
-                        'Respuesta fija del endpoint de prueba.',
-                        { $ref: '#/components/schemas/SuccessfulMessageResponse' },
+                        'Lista de canales del workspace.',
+                        { $ref: '#/components/schemas/GetChannelsResponse' },
                         {
                             ok: true,
                             status: 200,
-                            message: 'Channel'
+                            message: 'Canales obtenidos correctamente',
+                            data: {
+                                channels: [
+                                    {
+                                        canal_id: '6ab01f9a190ff6061955c8a0',
+                                        canal_nombre: 'General',
+                                        canal_descripcion: 'Canal general del espacio de trabajo',
+                                        categoria: null,
+                                        fecha_creacion: '2026-09-17T14:56:26.249Z'
+                                    }
+                                ]
+                            }
                         }
                     ),
                     400: AUTH_ERRORS[400],
                     401: AUTH_ERRORS[401],
+                    403: error_response(
+                        'El usuario autenticado no es miembro del workspace.',
+                        [
+                            ['no_miembro', 403, 'No eres miembro de este espacio de trabajo']
+                        ]
+                    ),
+                    404: error_response(
+                        'No existe un workspace con ese id.',
+                        [
+                            ['workspace_no_encontrado', 404, 'Workspace no encontrado']
+                        ]
+                    ),
+                    500: INTERNAL_ERROR[500],
+                    503: DATABASE_ERROR[503]
+                }
+            },
+            post: {
+                tags: ['Channels'],
+                summary: 'Crear un canal en un espacio de trabajo',
+                operationId: 'createChannel',
+                description: [
+                    'Crea un canal dentro del workspace. Solo puede hacerlo un miembro con rol `owner` o `admin`.',
+                    '',
+                    '`name` es obligatorio y se guarda sin el `#`. `description` y `categoria` son opcionales; si no se envía `categoria`, el canal queda sin categoría.'
+                ].join('\n'),
+                security: [{ bearerAuth: [] }],
+                parameters: [
+                    { $ref: '#/components/parameters/WorkspaceId' }
+                ],
+                requestBody: {
+                    required: true,
+                    content: json_content(
+                        { $ref: '#/components/schemas/CreateChannelRequest' },
+                        {
+                            example: {
+                                name: 'anuncios',
+                                description: 'Novedades del equipo'
+                            }
+                        }
+                    )
+                },
+                responses: {
+                    201: success_response(
+                        'Canal creado.',
+                        { $ref: '#/components/schemas/CreateChannelResponse' },
+                        {
+                            ok: true,
+                            status: 201,
+                            message: 'Canal creado',
+                            data: {
+                                channel_created: {
+                                    canal_id: '6ab01f9a190ff6061955c8a1',
+                                    canal_nombre: 'anuncios',
+                                    canal_descripcion: 'Novedades del equipo',
+                                    categoria: null,
+                                    fecha_creacion: '2026-09-17T15:10:00.000Z'
+                                }
+                            }
+                        }
+                    ),
+                    400: error_response(
+                        'Header de autenticación inválido, o body inválido.',
+                        [
+                            ['header_ausente', 400, 'Auth header is requered'],
+                            ['header_malformado', 400, 'Auth header is malformed'],
+                            ['falta_name', 400, 'name es un campo requerido'],
+                            ['name_largo', 400, 'name no puede superar los 60 caracteres'],
+                            ['description_larga', 400, 'description no puede superar los 1000 caracteres'],
+                            ['categoria_larga', 400, 'categoria no puede superar los 60 caracteres']
+                        ]
+                    ),
+                    401: AUTH_ERRORS[401],
+                    403: error_response(
+                        'El usuario no es miembro del workspace o su rol no es `owner`/`admin`.',
+                        [
+                            ['no_miembro', 403, 'No eres miembro de este espacio de trabajo'],
+                            ['sin_permisos', 403, 'No tienes permisos suficientes para hacer esta operacion']
+                        ]
+                    ),
+                    404: error_response(
+                        'No existe un workspace con ese id.',
+                        [
+                            ['workspace_no_encontrado', 404, 'Workspace no encontrado']
+                        ]
+                    ),
+                    500: INTERNAL_ERROR[500],
+                    503: DATABASE_ERROR[503]
+                }
+            }
+        },
+
+        '/api/workspaces/{workspace_id}/channels/{channel_id}': {
+            delete: {
+                tags: ['Channels'],
+                summary: 'Eliminar un canal',
+                operationId: 'deleteChannel',
+                description: [
+                    'Elimina el canal y sus mensajes. Solo puede hacerlo un miembro con rol `owner` o `admin`.',
+                    '',
+                    'El canal `General` del espacio no se puede eliminar.'
+                ].join('\n'),
+                security: [{ bearerAuth: [] }],
+                parameters: [
+                    { $ref: '#/components/parameters/WorkspaceId' },
+                    { $ref: '#/components/parameters/ChannelId' }
+                ],
+                responses: {
+                    200: success_response(
+                        'Canal eliminado junto con sus mensajes.',
+                        { $ref: '#/components/schemas/DeleteChannelResponse' },
+                        {
+                            ok: true,
+                            status: 200,
+                            message: 'Canal eliminado correctamente',
+                            data: {
+                                channel_deleted: {
+                                    canal_id: '6ab01f9a190ff6061955c8a1',
+                                    canal_nombre: 'anuncios',
+                                    canal_descripcion: 'Novedades del equipo',
+                                    categoria: null,
+                                    fecha_creacion: '2026-09-17T15:10:00.000Z'
+                                }
+                            }
+                        }
+                    ),
+                    400: AUTH_ERRORS[400],
+                    401: AUTH_ERRORS[401],
+                    403: error_response(
+                        'El usuario no es miembro del workspace, su rol no es `owner`/`admin`, o intenta borrar el canal General.',
+                        [
+                            ['no_miembro', 403, 'No eres miembro de este espacio de trabajo'],
+                            ['sin_permisos', 403, 'No tienes permisos suficientes para hacer esta operacion'],
+                            ['canal_protegido', 403, 'El canal General del espacio no se puede eliminar']
+                        ]
+                    ),
+                    404: error_response(
+                        'No existe el workspace, o el canal no pertenece a ese workspace.',
+                        [
+                            ['workspace_no_encontrado', 404, 'Workspace no encontrado'],
+                            ['canal_no_encontrado', 404, 'Canal no encontrado']
+                        ]
+                    ),
                     500: INTERNAL_ERROR[500],
                     503: DATABASE_ERROR[503]
                 }
@@ -982,6 +1147,17 @@ const openapi_document = {
                     pattern: '^[a-fA-F0-9]{24}$'
                 },
                 example: '6aabff9a190ff6061955c889'
+            },
+            ChannelId: {
+                name: 'channel_id',
+                in: 'path',
+                required: true,
+                description: 'ObjectId de MongoDB del canal (24 caracteres hexadecimales). Debe pertenecer al workspace indicado.',
+                schema: {
+                    type: 'string',
+                    pattern: '^[a-fA-F0-9]{24}$'
+                },
+                example: '6ab01f9a190ff6061955c8a1'
             }
         },
 
@@ -1099,6 +1275,32 @@ const openapi_document = {
                 }
             },
 
+            CreateChannelRequest: {
+                type: 'object',
+                required: ['name'],
+                properties: {
+                    name: {
+                        type: 'string',
+                        minLength: 1,
+                        maxLength: 60,
+                        description: 'Nombre del canal, sin el `#`. El controller devuelve `400` si falta o está vacío.',
+                        example: 'anuncios'
+                    },
+                    description: {
+                        type: 'string',
+                        maxLength: 1000,
+                        description: 'Descripción opcional del canal.',
+                        example: 'Novedades del equipo'
+                    },
+                    categoria: {
+                        type: 'string',
+                        maxLength: 60,
+                        description: 'Categoría opcional. Si no se envía, el canal queda sin categoría.',
+                        example: 'Canales de texto'
+                    }
+                }
+            },
+
             /* -------------------- Modelos -------------------- */
 
             User: {
@@ -1174,6 +1376,40 @@ const openapi_document = {
                     __v: {
                         type: 'integer',
                         example: 0
+                    }
+                }
+            },
+
+            Channel: {
+                type: 'object',
+                description: 'Canal de un espacio de trabajo tal como lo devuelve la API (campos con prefijo `canal_`).',
+                properties: {
+                    canal_id: {
+                        type: 'string',
+                        pattern: '^[a-fA-F0-9]{24}$',
+                        example: '6ab01f9a190ff6061955c8a0'
+                    },
+                    canal_nombre: {
+                        type: 'string',
+                        maxLength: 60,
+                        example: 'General'
+                    },
+                    canal_descripcion: {
+                        type: 'string',
+                        maxLength: 1000,
+                        example: 'Canal general del espacio de trabajo'
+                    },
+                    categoria: {
+                        type: 'string',
+                        maxLength: 60,
+                        nullable: true,
+                        description: 'Categoría del canal. `null` cuando el canal no tiene categoría.',
+                        example: null
+                    },
+                    fecha_creacion: {
+                        type: 'string',
+                        format: 'date-time',
+                        example: '2026-09-17T14:56:26.249Z'
                     }
                 }
             },
@@ -1515,10 +1751,97 @@ const openapi_document = {
                     },
                     data: {
                         type: 'object',
-                        required: ['workspace_created', 'owner_membership'],
+                        required: ['workspace_created', 'owner_membership', 'default_channel'],
                         properties: {
                             workspace_created: { $ref: '#/components/schemas/Workspace' },
-                            owner_membership: { $ref: '#/components/schemas/Member' }
+                            owner_membership: { $ref: '#/components/schemas/Member' },
+                            default_channel: {
+                                allOf: [
+                                    { $ref: '#/components/schemas/Channel' }
+                                ],
+                                description: 'Canal `General` que se crea automáticamente con el espacio de trabajo.'
+                            }
+                        }
+                    }
+                }
+            },
+
+            GetChannelsResponse: {
+                type: 'object',
+                required: ['ok', 'status', 'message', 'data'],
+                properties: {
+                    ok: {
+                        type: 'boolean',
+                        example: true
+                    },
+                    status: {
+                        type: 'integer',
+                        example: 200
+                    },
+                    message: {
+                        type: 'string',
+                        example: 'Canales obtenidos correctamente'
+                    },
+                    data: {
+                        type: 'object',
+                        required: ['channels'],
+                        properties: {
+                            channels: {
+                                type: 'array',
+                                items: { $ref: '#/components/schemas/Channel' }
+                            }
+                        }
+                    }
+                }
+            },
+
+            CreateChannelResponse: {
+                type: 'object',
+                required: ['ok', 'status', 'message', 'data'],
+                properties: {
+                    ok: {
+                        type: 'boolean',
+                        example: true
+                    },
+                    status: {
+                        type: 'integer',
+                        example: 201
+                    },
+                    message: {
+                        type: 'string',
+                        example: 'Canal creado'
+                    },
+                    data: {
+                        type: 'object',
+                        required: ['channel_created'],
+                        properties: {
+                            channel_created: { $ref: '#/components/schemas/Channel' }
+                        }
+                    }
+                }
+            },
+
+            DeleteChannelResponse: {
+                type: 'object',
+                required: ['ok', 'status', 'message', 'data'],
+                properties: {
+                    ok: {
+                        type: 'boolean',
+                        example: true
+                    },
+                    status: {
+                        type: 'integer',
+                        example: 200
+                    },
+                    message: {
+                        type: 'string',
+                        example: 'Canal eliminado correctamente'
+                    },
+                    data: {
+                        type: 'object',
+                        required: ['channel_deleted'],
+                        properties: {
+                            channel_deleted: { $ref: '#/components/schemas/Channel' }
                         }
                     }
                 }

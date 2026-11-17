@@ -55,6 +55,12 @@
   list-style: none;
 }
 
+/* La pantalla ocupa todo el viewport: bloquea el scroll del documento */
+body.ws-scroll-locked {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
 /* ---------- Rail de espacios de trabajo ---------- */
 
 .ws-rail {
@@ -62,6 +68,7 @@
   flex-direction: column;
   align-items: center;
   gap: 8px;
+  min-width: 0;
   min-height: 0;
   padding: 12px 0 16px;
   overflow-x: hidden;
@@ -214,7 +221,10 @@
   color: var(--ws-text-muted);
 }
 
-.ws-sidebar-members-button {
+.ws-sidebar-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
   margin-left: auto;
 }
 
@@ -224,28 +234,6 @@
   padding: 8px;
   overflow-x: hidden;
   overflow-y: auto;
-}
-
-.ws-channel-shortcut {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 12px;
-  padding: 7px 8px;
-  border-radius: 4px;
-  color: var(--ws-text-muted);
-  font-size: 15px;
-  font-weight: 500;
-  cursor: default;
-}
-
-.ws-channel-shortcut:hover {
-  background: var(--ws-bg-hover);
-  color: var(--ws-text-bright);
-}
-
-.ws-channel-shortcut-icon {
-  flex: 0 0 auto;
 }
 
 .ws-channel-group {
@@ -270,22 +258,42 @@
   flex: 0 0 auto;
 }
 
+.ws-channel-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 2px;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+}
+
+.ws-channel-item:hover {
+  background: var(--ws-bg-hover);
+}
+
+.ws-channel-item-active {
+  background: var(--ws-bg-active);
+}
+
 .ws-channel {
   display: flex;
   align-items: center;
   gap: 6px;
-  margin-bottom: 2px;
+  flex: 1;
+  min-width: 0;
   padding: 7px 8px;
+  border: none;
   border-radius: 4px;
+  background: transparent;
   color: var(--ws-text-muted);
+  font-family: inherit;
   font-size: 15px;
   font-weight: 500;
   line-height: 1.2;
-  cursor: default;
+  text-align: left;
+  cursor: pointer;
 }
 
 .ws-channel:hover {
-  background: var(--ws-bg-hover);
   color: var(--ws-text-bright);
 }
 
@@ -301,14 +309,162 @@
   white-space: nowrap;
 }
 
-.ws-channel-active {
-  background: var(--ws-bg-active);
+.ws-channel-item-active .ws-channel {
   color: var(--ws-text);
   font-weight: 600;
 }
 
-.ws-channel-active .ws-channel-hash {
+.ws-channel-item-active .ws-channel-hash {
   color: var(--ws-text-bright);
+}
+
+.ws-channel-delete {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  margin-right: 4px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--ws-text-muted);
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s ease, background 0.15s ease, color 0.15s ease;
+}
+
+.ws-channel-item:hover .ws-channel-delete,
+.ws-channel-delete:focus-visible {
+  opacity: 1;
+}
+
+.ws-channel-delete:hover {
+  background: rgba(242, 63, 67, 0.16);
+  color: #f2f2f2;
+}
+
+@media (hover: none) {
+  .ws-channel-delete {
+    opacity: 1;
+  }
+}
+
+.ws-channel-empty {
+  margin: 8px;
+  color: var(--ws-text-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.ws-channel-empty-text {
+  margin: 0 0 8px;
+  overflow-wrap: anywhere;
+}
+
+.ws-channel-retry {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  background: var(--ws-accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ws-channel-retry:hover {
+  background: var(--ws-accent-hover);
+}
+
+/* ---------- Formulario para crear canal ---------- */
+
+.ws-channel-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+  padding: 10px;
+  border-radius: 6px;
+  background: var(--ws-bg-rail);
+}
+
+.ws-channel-form-label {
+  color: var(--ws-text-bright);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.ws-channel-form-input {
+  width: 100%;
+  height: 32px;
+  padding: 0 8px;
+  border: none;
+  border-radius: 4px;
+  background: var(--ws-bg-chat);
+  color: var(--ws-text);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+}
+
+.ws-channel-form-input::placeholder {
+  color: var(--ws-text-faint);
+}
+
+.ws-channel-form-input:focus {
+  box-shadow: 0 0 0 1px var(--ws-accent);
+}
+
+.ws-channel-form-error {
+  margin: 0;
+  color: #ff8f92;
+  font-size: 12px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.ws-channel-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.ws-channel-form-button {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ws-channel-form-cancel {
+  background: transparent;
+  color: var(--ws-text-muted);
+}
+
+.ws-channel-form-cancel:hover {
+  color: var(--ws-text-bright);
+  text-decoration: underline;
+}
+
+.ws-channel-form-submit {
+  background: var(--ws-accent);
+  color: #fff;
+}
+
+.ws-channel-form-submit:hover {
+  background: var(--ws-accent-hover);
+}
+
+.ws-channel-form-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .ws-user-bar {
@@ -396,6 +552,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
+  flex: 1 1 auto;
   min-width: 0;
 }
 
@@ -405,11 +562,14 @@
 }
 
 .ws-chat-title {
+  min-width: 0;
   margin: 0;
+  overflow: hidden;
   color: var(--ws-text);
   font-size: 16px;
   font-weight: 700;
   line-height: 1.2;
+  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
@@ -859,6 +1019,7 @@
 .ws-channel-scroll,
 .ws-messages,
 .ws-members-scroll {
+  overscroll-behavior: contain;
   scrollbar-width: thin;
   scrollbar-color: #1a1b1e transparent;
 }
@@ -999,46 +1160,213 @@
   outline-offset: 2px;
 }
 
+/* ---------- Estado vacío del chat ---------- */
+
+.ws-chat-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  min-height: 0;
+  padding: 32px 24px;
+  text-align: center;
+}
+
+.ws-chat-placeholder-title {
+  margin: 0 0 8px;
+  color: var(--ws-text);
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.ws-chat-placeholder-text {
+  max-width: 420px;
+  margin: 0;
+  color: var(--ws-text-muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.ws-chat-empty {
+  margin: 24px 16px;
+  color: var(--ws-text-muted);
+  font-size: 14px;
+}
+
+/* ---------- Modal de confirmación ---------- */
+
+.ws-confirm-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.ws-confirm {
+  width: 100%;
+  max-width: 400px;
+  padding: 24px;
+  border-radius: 8px;
+  background: var(--ws-bg-sidebar);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+.ws-confirm-title {
+  margin: 0 0 8px;
+  color: var(--ws-text);
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.ws-confirm-text {
+  margin: 0;
+  color: var(--ws-text-bright);
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.ws-confirm-error {
+  margin: 12px 0 0;
+  color: #ff8f92;
+  font-size: 13px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.ws-confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.ws-confirm-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ws-confirm-cancel {
+  background: transparent;
+  color: var(--ws-text-bright);
+}
+
+.ws-confirm-cancel:hover {
+  text-decoration: underline;
+}
+
+.ws-confirm-delete {
+  background: var(--ws-red);
+  color: #fff;
+}
+
+.ws-confirm-delete:hover {
+  background: #d83c3f;
+}
+
+.ws-confirm-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ---------- Drawers (mobile / tablet) ---------- */
+
+.ws-overlay {
+  display: none;
+}
+
+.ws-header-menu,
+.ws-sidebar-close,
+.ws-members-close {
+  display: none;
+}
+
 /* ---------- Responsive ---------- */
 
 @media (max-width: 1200px) {
   .workspace-screen {
-    grid-template-columns: 72px 224px minmax(0, 1fr);
+    grid-template-columns: 72px 236px minmax(0, 1fr);
   }
 
   .ws-members {
-    display: none;
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    width: min(300px, 88vw);
+    border-left: 1px solid var(--ws-divider);
+    box-shadow: -12px 0 32px rgba(0, 0, 0, 0.4);
+    visibility: hidden;
+    transform: translateX(100%);
+    transition: transform 0.2s ease, visibility 0.2s ease;
+  }
+
+  .ws-members-open {
+    visibility: visible;
+    transform: translateX(0);
+  }
+
+  .ws-members-close {
+    display: grid;
+  }
+
+  .ws-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    background: rgba(0, 0, 0, 0.55);
   }
 }
 
-@media (max-width: 960px) {
+@media (max-width: 900px) {
   .workspace-screen {
-    grid-template-columns: 68px 208px minmax(0, 1fr);
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+
+  .ws-sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 30;
+    width: min(280px, 84vw);
+    border-right: 1px solid var(--ws-divider);
+    box-shadow: 12px 0 32px rgba(0, 0, 0, 0.4);
+    visibility: hidden;
+    transform: translateX(-100%);
+    transition: transform 0.2s ease, visibility 0.2s ease;
+  }
+
+  .ws-sidebar-open {
+    visibility: visible;
+    transform: translateX(0);
+  }
+
+  .ws-sidebar-close,
+  .ws-header-menu {
+    display: grid;
   }
 
   .ws-chat-divider,
   .ws-chat-topic {
     display: none;
   }
-}
 
-@media (max-width: 760px) {
-  .workspace-screen {
-    grid-template-columns: 64px minmax(0, 1fr);
-  }
-
-  .ws-sidebar {
-    display: none;
-  }
-
-  .ws-rail-item,
-  .ws-guild-avatar {
-    width: 44px;
-    height: 44px;
-  }
-
-  .ws-rail-pill {
-    left: -10px;
+  .ws-user-bar {
+    height: auto;
+    min-height: 52px;
+    padding-bottom: env(safe-area-inset-bottom);
   }
 
   .ws-chat-header {
@@ -1050,26 +1378,114 @@
   }
 
   .ws-composer-wrap {
-    padding: 0 12px 12px;
+    padding: 0 12px calc(12px + env(safe-area-inset-bottom));
+  }
+
+  .ws-composer-input {
+    font-size: 16px;
   }
 
   .ws-chat-welcome-title {
-    font-size: 24px;
+    font-size: clamp(22px, 5vw, 28px);
+  }
+
+  .ws-rail-item,
+  .ws-guild-avatar,
+  .ws-avatar--rail {
+    width: 44px;
+    height: 44px;
+  }
+
+  .ws-rail-pill {
+    left: -10px;
   }
 }
 
-@media (max-width: 540px) {
-  .ws-chat-tools {
+@media (max-width: 600px) {
+  .workspace-screen {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+
+  .ws-rail {
+    gap: 6px;
+    padding: 8px 0 12px;
+  }
+
+  .ws-rail-item,
+  .ws-guild-avatar,
+  .ws-avatar--rail {
+    width: 40px;
+    height: 40px;
+  }
+
+  .ws-rail-item {
+    font-size: 13px;
+  }
+
+  .ws-rail-home-mark {
+    font-size: 18px;
+  }
+
+  .ws-rail-pill {
+    left: -8px;
+  }
+
+  .ws-chat-header {
+    gap: 8px;
+    padding: 0 8px;
+  }
+
+  .ws-chat-title {
+    font-size: 15px;
+  }
+
+  .ws-chat-tools .ws-icon-button:not(.ws-members-toggle) {
     display: none;
   }
 
   .ws-chat-welcome {
-    padding-top: 28px;
+    padding: 24px 12px 8px;
   }
 
   .ws-chat-welcome-icon {
     width: 56px;
     height: 56px;
+  }
+
+  .ws-chat-welcome-title {
+    font-size: 22px;
+  }
+
+  .ws-chat-welcome-text {
+    font-size: 14px;
+  }
+
+  .ws-day-divider {
+    margin: 16px 12px 8px;
+  }
+
+  .ws-message {
+    gap: 12px;
+    padding: 2px 8px 2px 12px;
+  }
+
+  .ws-message-avatar,
+  .ws-message-avatar-slot {
+    flex-basis: 36px;
+    width: 36px;
+  }
+
+  .ws-message-avatar {
+    height: 36px;
+    font-size: 13px;
+  }
+
+  .ws-composer-wrap {
+    padding: 0 8px calc(8px + env(safe-area-inset-bottom));
+  }
+
+  .ws-composer {
+    padding: 0 6px 0 12px;
   }
 
   .ws-composer-actions .ws-icon-button:nth-child(2),

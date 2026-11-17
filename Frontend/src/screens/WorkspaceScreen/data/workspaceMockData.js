@@ -1,81 +1,13 @@
 /*
-Datos de ejemplo mientras el backend no expone canales ni mensajes.
-La estructura imita los modelos de Mongo para que reemplazarlos por los
-endpoints reales sea un cambio de origen de datos, no de componentes.
+Mensajes de ejemplo mientras el backend no expone mensajes de canal.
+La estructura imita el modelo MensajeCanal para que reemplazarlos por el
+endpoint real sea un cambio de origen de datos, no de componentes.
+
+Los canales ya son datos reales: GET /api/workspaces/:workspace_id/channels
 
 TODO:
-- Canales: GET /api/workspaces/:workspace_id/channels
 - Mensajes: GET /api/channels/:channel_id/messages
 */
-
-export const MOCK_CHANNEL_GROUPS = [
-  {
-    grupo_id: 'informacion',
-    grupo_nombre: 'Información',
-    canales: [
-      {
-        canal_id: 'bienvenida',
-        canal_nombre: 'bienvenida',
-        canal_descripcion: 'Empezá por acá: reglas y presentaciones del equipo.'
-      },
-      {
-        canal_id: 'anuncios',
-        canal_nombre: 'anuncios',
-        canal_descripcion: 'Novedades importantes del espacio de trabajo.'
-      }
-    ]
-  },
-  {
-    grupo_id: 'general',
-    grupo_nombre: 'General',
-    canales: [
-      {
-        canal_id: 'general',
-        canal_nombre: 'general',
-        canal_descripcion: 'Conversación general del equipo. Todo lo que no tiene un canal propio, va acá.'
-      },
-      {
-        canal_id: 'presentaciones',
-        canal_nombre: 'presentaciones',
-        canal_descripcion: 'Contá quién sos y qué estás cursando.'
-      },
-      {
-        canal_id: 'off-topic',
-        canal_nombre: 'off-topic',
-        canal_descripcion: 'Memes, música y charlas que no van en ningún otro lado.'
-      }
-    ]
-  },
-  {
-    grupo_id: 'proyectos',
-    grupo_nombre: 'Proyectos',
-    canales: [
-      {
-        canal_id: 'desarrollo',
-        canal_nombre: 'desarrollo',
-        canal_descripcion: 'Código, revisiones y despliegues.'
-      },
-      {
-        canal_id: 'diseno',
-        canal_nombre: 'diseno',
-        canal_descripcion: 'Mockups, componentes y guía de estilos.'
-      },
-      {
-        canal_id: 'soporte',
-        canal_nombre: 'soporte',
-        canal_descripcion: 'Consultas técnicas y reportes de bugs.'
-      }
-    ]
-  }
-]
-
-export const ACTIVE_CHANNEL_ID = 'general'
-
-export function getActiveChannel() {
-  const canales = MOCK_CHANNEL_GROUPS.flatMap((group) => group.canales)
-
-  return canales.find((canal) => canal.canal_id === ACTIVE_CHANNEL_ID) ?? canales[0]
-}
 
 export const MOCK_MESSAGES = [
   {
