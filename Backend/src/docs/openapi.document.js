@@ -1,0 +1,1635 @@
+import ENVIRONMENT from '../config/environment.config.js'
+
+/*
+Documento OpenAPI 3.0.3 que describe la API de 2026_UTN_SLACK.
+
+La idea de este archivo es tener en un solo lugar:
+- Que recibe cada endpoint (params, query, body y headers).
+- Todas las respuestas posibles de cada endpoint, con sus codigos HTTP,
+  mensajes y ejemplos, incluyendo los errores genericos (500 y 503).
+
+Se sirve como JSON en GET /api-docs.json y se consume desde Swagger UI en /api-docs.
+*/
+
+const SERVER_URL = ENVIRONMENT.URL_BACKEND || `http://localhost:${ENVIRONMENT.PORT || 8080}`
+
+/* ------------------------------------------------------------------ */
+/* Helpers para no repetir la estructura de las respuestas             */
+/* ------------------------------------------------------------------ */
+
+const json_content = (schema, extra = {}) => ({
+    'application/json': {
+        schema,
+        ...extra
+    }
+})
+
+const error_examples = (entries) => Object.fromEntries(
+    entries.map(([key, status, message]) => [
+        key,
+        {
+            summary: `${status} · ${message}`,
+            value: {
+                ok: false,
+                status,
+                message
+            }
+        }
+    ])
+)
+
+const error_response = (description, entries = []) => ({
+    description,
+    content: {
+        'application/json': {
+            schema: { $ref: '#/components/schemas/ErrorResponse' },
+            ...(entries.length > 0 ? { examples: error_examples(entries) } : {})
+        }
+    }
+})
+
+const success_response = (description, schema, example) => ({
+    description,
+    content: json_content(
+        schema,
+        example ? { example } : {}
+    )
+})
+
+/* Errores comunes de los endpoints protegidos con authMiddleware */
+const AUTH_ERRORS = {
+    400: error_response(
+        'El header `Authorization` no fue enviado o no tiene el formato `Bearer <token>`.',
+        [
+            ['header_ausente', 400, 'Auth header is requered'],
+            ['header_malformado', 400, 'Auth header is malformed']
+        ]
+    ),
+    401: error_response(
+        'El token JWT es inválido, fue alterado, está vencido o tiene una fecha de validez futura.',
+        [
+            ['token_invalido', 401, 'Auth token is invalid!']
+        ]
+    )
+}
+
+/* Error inesperado: el middleware central de errores responde siempre igual */
+const INTERNAL_ERROR = {
+    500: error_response(
+        'Error inesperado no contemplado por la API (por ejemplo un `CastError` de Mongoose al recibir un id con formato inválido o un `ValidationError` de un schema).',
+        [
+            ['error_interno', 500, 'Internal server error']
+        ]
+    )
+}
+
+/* Se ejecuta antes que cualquier ruta: si Mongo no responde, no llega al controller */
+const DATABASE_ERROR = {
+    503: {
+        description: 'No se pudo establecer conexión con MongoDB. Esta respuesta se produce en el middleware de conexión, antes de llegar al endpoint.',
+        content: json_content(
+            { $ref: '#/components/schemas/ServiceUnavailableResponse' },
+            {
+                example: {
+                    message: 'No se pudo conectar a la base de datos'
+                }
+            }
+        )
+    }
+}
+
+/* ------------------------------------------------------------------ */
+/* Documento                                                           */
+/* ------------------------------------------------------------------ */
+
+const openapi_document = {
+    openapi: '3.0.3',
+
+    info: {
+        title: '2026 UTN Slack API',
+        version: '1.0.0',
+        description: [
+            'API REST de la plataforma tipo Slack (usuarios, espacios de trabajo, membresías y canales).',
+            '',
+            '## Formato de las respuestas',
+            'Todas las respuestas (salvo el `503` del middleware de conexión) comparten la misma envoltura:',
+            '',
+            '```json',
+            '{ "ok": true, "status": 200, "message": "texto", "data": { } }',
+            '```',
+            '',
+            '- `ok`: indica si la operación fue exitosa.',
+            '- `status`: repite el código HTTP de la respuesta.',
+            '- `message`: mensaje legible para el cliente.',
+            '- `data`: presente solo en las respuestas que devuelven información.',
+            '',
+            'Los errores usan la misma envoltura con `ok: false` y sin `data`.',
+            '',
+            '## Autenticación',
+            'Los endpoints protegidos esperan el header:',
+            '',
+            '```',
+            'Authorization: Bearer <auth_token>',
+            '```',
+            '',
+            'El `auth_token` se obtiene en `POST /api/auth/login` y se envía también al botón **Authorize** de Swagger UI.'
+        ].join('\n')
+    },
+
+    servers: [
+        {
+            url: SERVER_URL,
+            description: 'Servidor configurado con URL_BACKEND (por defecto el local)'
+        }
+    ],
+
+    tags: [
+        {
+            name: 'Auth',
+            description: 'Registro, inicio de sesión, verificación de email y recuperación de contraseña.'
+        },
+        {
+            name: 'Users',
+            description: 'Consulta de usuarios registrados.'
+        },
+        {
+            name: 'Workspaces',
+            description: 'Espacios de trabajo y sus membresías. Requieren autenticación.'
+        },
+        {
+            name: 'Channels',
+            description: 'Canales de un espacio de trabajo. Requieren autenticación.'
+        }
+    ],
+
+    paths: {
+
+        /* ------------------------------------------------------------ */
+        /* AUTH                                                          */
+        /* ------------------------------------------------------------ */
+
+        '/api/auth/register': {
+            post: {
+                tags: ['Auth'],
+                summary: 'Registrar un usuario',
+                operationId: 'register',
+                description: [
+                    'Crea un usuario con la contraseña encriptada (bcrypt) y envía un email de verificación con un token válido por 7 días.',
+                    '',
+                    'El usuario queda con `email_verificado: false` hasta que use el enlace del mail, por lo que todavía no puede iniciar sesión.'
+                ].join('\n'),
+                requestBody: {
+                    required: true,
+                    content: json_content(
+                        { $ref: '#/components/schemas/RegisterRequest' },
+                        {
+                            example: {
+                                username: 'maria',
+                                email: 'maria@mail.com',
+                                password: 'pepe123'
+                            }
+                        }
+                    )
+                },
+                responses: {
+                    201: success_response(
+                        'Usuario creado. Se envió el email de verificación.',
+                        { $ref: '#/components/schemas/SuccessfulMessageResponse' },
+                        {
+                            ok: true,
+                            status: 201,
+                            message: 'User registered successfully'
+                        }
+                    ),
+                    400: error_response(
+                        'Datos inválidos o email ya registrado.',
+                        [
+                            ['campos_faltantes', 400, 'Email, password and username is required'],
+                            ['email_invalido', 400, 'Email is incorrect'],
+                            ['email_en_uso', 400, 'Email is already used']
+                        ]
+                    ),
+                    500: INTERNAL_ERROR[500],
+                    503: DATABASE_ERROR[503]
+                }
+            }
+        },
+
+        '/api/auth/login': {
+            post: {
+                tags: ['Auth'],
+                summary: 'Iniciar sesión',
+                operationId: 'login',
+                description: [
+                    'Valida las credenciales y devuelve un JWT (`auth_token`) que debe enviarse en el header `Authorization` de los endpoints protegidos.',
+                    '',
+                    'El JWT incluye `id`, `name` y `email` del usuario. No tiene expiración configurada en la implementación actual.'
+                ].join('\n'),
+                requestBody: {
+                    required: true,
+                    content: json_content(
+                        { $ref: '#/components/schemas/LoginRequest' },
+                        {
+                            example: {
+                                email: 'maria@mail.com',
+                                password: 'pepe123'
+                            }
+                        }
+                    )
+                },
+                responses: {
+                    200: success_response(
+                        'Credenciales válidas. Se devuelve el token de sesión.',
+                        { $ref: '#/components/schemas/LoginResponse' },
+                        {
+                            ok: true,
+                            message: 'You have logged in successfully',
+                            status: 200,
+                            data: {
+                                auth_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                            }
+                        }
+                    ),
+                    400: error_response(
+                        'Campos faltantes, tipos incorrectos o email con formato inválido.',
+                        [
+                            ['campos_requeridos', 400, 'Email and password are required'],
+                            ['email_invalido', 400, 'Email is incorrect']
+                        ]
+                    ),
+                    401: error_response(
+                        'El email no está registrado o la contraseña no coincide con el hash guardado.',
+                        [
+                            ['credenciales_invalidas', 401, 'Invalid email or password']
+                        ]
+                    ),
+                    403: error_response(
+                        'El usuario existe y la contraseña es correcta, pero todavía no verificó su email.',
+                        [
+                            ['email_no_verificado', 403, 'Email no verificado']
+                        ]
+                    ),
+                    500: INTERNAL_ERROR[500],
+                    503: DATABASE_ERROR[503]
+                }
+            }
+        },
+
+        '/api/auth/verify-email': {
+            get: {
+                tags: ['Auth'],
+                summary: 'Verificar el email del usuario',
+                operationId: 'verifyEmail',
+                description: [
+                    'Verifica la firma y la vigencia del token enviado por mail y marca al usuario como verificado.',
+                    '',
+                    'Si el usuario ya estaba verificado no se considera un error: responde `200` con `data.already_verified: true` (el enlace pudo usarse dos veces).',
+                    '',
+                    'El token también puede llegar por path en el endpoint de compatibilidad `GET /api/auth/verify-email/{verify_email_token}`.'
+                ].join('\n'),
+                parameters: [
+                    {
+                        name: 'verification_token',
+                        in: 'query',
+                        required: true,
+                        description: 'Token JWT firmado que viaja en el enlace del email de verificación.',
+                        schema: {
+                            type: 'string'
+                        },
+                        example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                    }
+                ],
+                responses: {
+                    200: {
+                        description: 'Email verificado o ya verificado previamente.',
+                        content: json_content(
+                            { $ref: '#/components/schemas/VerifyEmailResponse' },
+                            {
+                                examples: {
+                                    verificado_ahora: {
+                                        summary: 'El usuario se verificó con esta llamada',
+                                        value: {
+                                            ok: true,
+                                            status: 200,
+                                            message: 'Usuario verificado exitosamente'
+                                        }
+                                    },
+                                    ya_verificado: {
+                                        summary: 'El usuario ya estaba verificado',
+                                        value: {
+                                            ok: true,
+                                            status: 200,
+                                            message: 'El email ya estaba verificado',
+                                            data: {
+                                                already_verified: true
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        )
+                    },
+                    400: error_response(
+                        'Falta el token o el enlace es inválido, fue alterado o expiró.',
+                        [
+                            ['token_faltante', 400, 'El link no incluye un token de verificacion'],
+                            ['token_invalido', 400, 'El enlace de verificacion es invalido o expiro']
+                        ]
+                    ),
+                    403: error_response(
+                        'El usuario existe pero está desactivado de la plataforma.',
+                        [
+                            ['usuario_desactivado', 403, 'Usuario esta desactivado de la plataforma, contactate con soporte si consideras que esto es un error']
+                        ]
+                    ),
+                    404: error_response(
+                        'El token es válido pero el usuario referenciado ya no existe.',
+                        [
+                            ['usuario_no_encontrado', 404, 'Usuario no encontrado']
+                        ]
+                    ),
+                    500: INTERNAL_ERROR[500],
+                    503: DATABASE_ERROR[503]
+                }
+            }
+        },
+
+        '/api/auth/verify-email/{verify_email_token}': {
+            get: {
+                tags: ['Auth'],
+                summary: 'Verificación de email (compatibilidad con links viejos)',
+                operationId: 'verifyEmailLegacyRedirect',
+                description: [
+                    'Endpoint de compatibilidad para enlaces antiguos que traían el token en el path.',
+                    '',
+                    'No verifica nada por sí mismo: redirige (`302`) al frontend a `/verify-email?verification_token=...` para que la pantalla de verificación procese el token.'
+                ].join('\n'),
+                parameters: [
+                    {
+                        name: 'verify_email_token',
+                        in: 'path',
+                        required: true,
+                        description: 'Token de verificación que venía en el path del link viejo.',
+                        schema: {
+                            type: 'string'
+                        }
+                    }
+                ],
+                responses: {
+                    302: {
+                        description: 'Redirección al frontend con el token en el query string.',
+                        headers: {
+                            Location: {
+                                description: 'URL del frontend: `${URL_FRONTEND}/verify-email?verification_token=<token>`',
+                                schema: {
+                                    type: 'string',
+                                    format: 'uri'
+                                }
+                            }
+                        }
+                    },
+                    503: DATABASE_ERROR[503]
+                }
+            }
+        },
+
+        '/api/auth/forgot-password': {
+            post: {
+                tags: ['Auth'],
+                summary: 'Solicitar restablecimiento de contraseña',
+                operationId: 'forgotPassword',
+                description: [
+                    'Si el email pertenece a un usuario existente y activo, genera un token de restablecimiento válido por 1 hora y envía el mail con el enlace al frontend (`/reset-password?reset_token=...`).',
+                    '',
+                    'Por seguridad la respuesta es **siempre la misma**, exista o no el usuario, para no revelar qué emails están registrados.'
+                ].join('\n'),
+                requestBody: {
+                    required: true,
+                    content: json_content(
+                        { $ref: '#/components/schemas/ForgotPasswordRequest' },
+                        {
+                            example: {
+                                email: 'maria@mail.com'
+                            }
+                        }
+                    )
+                },
+                responses: {
+                    200: success_response(
+                        'Solicitud procesada. No confirma si el email existe.',
+                        { $ref: '#/components/schemas/SuccessfulMessageResponse' },
+                        {
+                            ok: true,
+                            status: 200,
+                            message: 'Si el email está registrado, te enviamos un correo con las instrucciones para restablecer tu contraseña'
+                        }
+                    ),
+                    400: error_response(
+                        'El email no fue enviado o tiene un formato inválido.',
+                        [
+                            ['email_requerido', 400, 'Email is required'],
+                            ['email_invalido', 400, 'Email is incorrect']
+                        ]
+                    ),
+                    500: INTERNAL_ERROR[500],
+                    503: DATABASE_ERROR[503]
+                }
+            }
+        },
+
+        '/api/auth/reset-password': {
+            post: {
+                tags: ['Auth'],
+                summary: 'Restablecer la contraseña',
+                operationId: 'resetPassword',
+                description: [
+                    'Valida el token recibido por mail y guarda la nueva contraseña encriptada.',
+                    '',
+                    'El token está firmado con un secreto que incluye el hash de la contraseña actual, por lo que **solo puede usarse una vez**: al cambiar la contraseña, el token deja de ser válido.'
+                ].join('\n'),
+                requestBody: {
+                    required: true,
+                    content: json_content(
+                        { $ref: '#/components/schemas/ResetPasswordRequest' },
+                        {
+                            example: {
+                                reset_token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+                                new_password: 'nuevaClave123'
+                            }
+                        }
+                    )
+                },
+                responses: {
+                    200: success_response(
+                        'Contraseña actualizada correctamente.',
+                        { $ref: '#/components/schemas/SuccessfulMessageResponse' },
+                        {
+                            ok: true,
+                            status: 200,
+                            message: 'Contraseña actualizada correctamente'
+                        }
+                    ),
+                    400: error_response(
+                        'Faltan datos, la contraseña es demasiado corta o el token es inválido/expiró.',
+                        [
+                            ['campos_requeridos', 400, 'El token y la nueva contraseña son obligatorios'],
+                            ['password_corta', 400, 'La contraseña debe tener al menos 8 caracteres'],
+                            ['token_invalido', 400, 'El enlace de restablecimiento es inválido o expiró']
+                        ]
+                    ),
+                    403: error_response(
+                        'El usuario dueño del token está desactivado de la plataforma.',
+                        [
+                            ['usuario_desactivado', 403, 'Usuario esta desactivado de la plataforma, contactate con soporte si consideras que esto es un error']
+                        ]
+                    ),
+                    500: INTERNAL_ERROR[500],
+                    503: DATABASE_ERROR[503]
+                }
+            }
+        },
+
+        /* ------------------------------------------------------------ */
+        /* USERS                                                         */
+        /* ------------------------------------------------------------ */
+
+        '/api/users': {
+            get: {
+                tags: ['Users'],
+                summary: 'Listar todos los usuarios',
+                operationId: 'getUsers',
+                description: [
+                    'Devuelve la lista completa de usuarios registrados.',
+                    '',
+                    '**Ojo:** hoy esta ruta no usa `authMiddleware`, por lo que es pública. Además devuelve el documento completo de MongoDB, incluido el hash de la contraseña.'
+                ].join('\n'),
+                responses: {
+                    200: success_response(
+                        'Lista de usuarios.',
+                        { $ref: '#/components/schemas/GetUsersResponse' },
+                        {
+                            ok: true,
+                            status: 200,
+                            message: 'Get users list',
+                            data: {
+                                users: [
+                                    {
+                                        _id: '6aabff9a190ff6061955c889',
+                                        nombre: 'maria',
+                                        email: 'maria@mail.com',
+                                        password: '$2b$10$hash...',
+                                        fecha_creacion: '2026-09-17T14:56:26.249Z',
+                                        activo: true,
+                                        email_verificado: true,
+                                        __v: 0
+                                    }
+                                ]
+                            }
+                        }
+                    ),
+                    500: INTERNAL_ERROR[500],
+                    503: DATABASE_ERROR[503]
+                }
+            }
+        },
+
+        '/api/users/{user_id}': {
+            get: {
+                tags: ['Users'],
+                summary: 'Obtener un usuario por id',
+                operationId: 'getUserById',
+                description: [
+                    'Devuelve los datos de un usuario en particular.',
+                    '',
+                    '**Ojo:** hoy esta ruta no usa `authMiddleware`, por lo que es pública. Si el id no tiene formato de ObjectId de MongoDB, Mongoose lanza un `CastError` y la API responde `500`.'
+                ].join('\n'),
+                parameters: [
+                    { $ref: '#/components/parameters/UserId' }
+                ],
+                responses: {
+                    200: success_response(
+                        'Usuario encontrado.',
+                        { $ref: '#/components/schemas/GetUserResponse' },
+                        {
+                            ok: true,
+                            status: 200,
+                            message: 'Get user details successfully',
+                            data: {
+                                user: {
+                                    _id: '6aabff9a190ff6061955c889',
+                                    nombre: 'maria',
+                                    email: 'maria@mail.com',
+                                    password: '$2b$10$hash...',
+                                    fecha_creacion: '2026-09-17T14:56:26.249Z',
+                                    activo: true,
+                                    email_verificado: true,
+                                    __v: 0
+                                }
+                            }
+                        }
+                    ),
+                    404: error_response(
+                        'No existe un usuario con ese id.',
+                        [
+                            ['usuario_no_encontrado', 404, 'User not found']
+                        ]
+                    ),
+                    500: INTERNAL_ERROR[500],
+                    503: DATABASE_ERROR[503]
+                }
+            }
+        },
+
+        /* ------------------------------------------------------------ */
+        /* WORKSPACES                                                    */
+        /* ------------------------------------------------------------ */
+
+        '/api/workspaces': {
+            get: {
+                tags: ['Workspaces'],
+                summary: 'Listar los espacios de trabajo del usuario autenticado',
+                operationId: 'getWorkspaces',
+                description: [
+                    'Devuelve una entrada por cada membresía del usuario autenticado, con el rol que tiene en ese espacio de trabajo.',
+                    '',
+                    'Los datos del workspace se obtienen con `populate`. Si una membresía apunta a un workspace que ya no existe, la API falla con `500`.'
+                ].join('\n'),
+                security: [{ bearerAuth: [] }],
+                responses: {
+                    200: success_response(
+                        'Membresías del usuario con los datos resumidos de cada workspace.',
+                        { $ref: '#/components/schemas/GetWorkspacesResponse' },
+                        {
+                            ok: true,
+                            status: 200,
+                            message: 'Obtenidos todos los datos',
+                            data: {
+                                workspaces: [
+                                    {
+                                        member_id: '6ab01f9a190ff6061955c890',
+                                        member_rol: 'owner',
+                                        workspace_id: '6ab01f9a190ff6061955c88a',
+                                        workspace_nombre: 'Equipo Backend',
+                                        workspace_fecha_creacion: '2026-09-17T14:56:26.249Z'
+                                    }
+                                ]
+                            }
+                        }
+                    ),
+                    400: AUTH_ERRORS[400],
+                    401: AUTH_ERRORS[401],
+                    500: INTERNAL_ERROR[500],
+                    503: DATABASE_ERROR[503]
+                }
+            },
+            post: {
+                tags: ['Workspaces'],
+                summary: 'Crear un espacio de trabajo',
+                operationId: 'createWorkspace',
+                description: [
+                    'Crea un workspace con los datos del body. El usuario autenticado queda automáticamente como miembro con rol `owner`.',
+                    '',
+                    'No hay validación manual del body: se delega en el schema de Mongoose. Si falta `name`, supera los 30 caracteres o `description` supera los 1000, Mongoose lanza un `ValidationError` que la API responde como `500`.'
+                ].join('\n'),
+                security: [{ bearerAuth: [] }],
+                requestBody: {
+                    required: true,
+                    content: json_content(
+                        { $ref: '#/components/schemas/CreateWorkspaceRequest' },
+                        {
+                            example: {
+                                name: 'Equipo Backend',
+                                description: 'Canal de trabajo del equipo de backend'
+                            }
+                        }
+                    )
+                },
+                responses: {
+                    201: success_response(
+                        'Workspace creado y membresía de owner generada.',
+                        { $ref: '#/components/schemas/CreateWorkspaceResponse' },
+                        {
+                            ok: true,
+                            status: 201,
+                            message: 'Workspace creado',
+                            data: {
+                                workspace_created: {
+                                    _id: '6ab01f9a190ff6061955c88a',
+                                    nombre: 'Equipo Backend',
+                                    description: 'Canal de trabajo del equipo de backend',
+                                    fecha_creacion: '2026-09-17T14:56:26.249Z',
+                                    __v: 0
+                                },
+                                owner_membership: {
+                                    _id: '6ab01f9a190ff6061955c890',
+                                    fk_id_usuario: '6aabff9a190ff6061955c889',
+                                    fk_id_espacio_trabajo: '6ab01f9a190ff6061955c88a',
+                                    rol: 'owner',
+                                    fecha_creacion: '2026-09-17T14:56:26.249Z',
+                                    activo: false,
+                                    __v: 0
+                                }
+                            }
+                        }
+                    ),
+                    400: AUTH_ERRORS[400],
+                    401: AUTH_ERRORS[401],
+                    500: INTERNAL_ERROR[500],
+                    503: DATABASE_ERROR[503]
+                }
+            }
+        },
+
+        '/api/workspaces/{workspace_id}': {
+            get: {
+                tags: ['Workspaces'],
+                summary: 'Obtener un espacio de trabajo',
+                operationId: 'getWorkspaceById',
+                description: [
+                    'Devuelve los datos del workspace y la lista de sus miembros.',
+                    '',
+                    'Requiere ser miembro del workspace (cualquier rol).'
+                ].join('\n'),
+                security: [{ bearerAuth: [] }],
+                parameters: [
+                    { $ref: '#/components/parameters/WorkspaceId' }
+                ],
+                responses: {
+                    200: success_response(
+                        'Workspace y sus miembros.',
+                        { $ref: '#/components/schemas/GetWorkspaceResponse' },
+                        {
+                            ok: true,
+                            status: 200,
+                            message: 'Workspace obtenido correctamente',
+                            data: {
+                                workspace_selected: {
+                                    _id: '6ab01f9a190ff6061955c88a',
+                                    nombre: 'Equipo Backend',
+                                    description: 'Canal de trabajo del equipo de backend',
+                                    fecha_creacion: '2026-09-17T14:56:26.249Z',
+                                    __v: 0
+                                },
+                                members: [
+                                    {
+                                        member_id: '6ab01f9a190ff6061955c890',
+                                        member_rol: 'owner',
+                                        fecha_creacion: '2026-09-17T14:56:26.249Z',
+                                        usuario: {
+                                            id: '6aabff9a190ff6061955c889',
+                                            nombre: 'maria',
+                                            email: 'maria@mail.com'
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ),
+                    400: AUTH_ERRORS[400],
+                    401: AUTH_ERRORS[401],
+                    403: error_response(
+                        'El usuario autenticado no es miembro del workspace.',
+                        [
+                            ['no_miembro', 403, 'No eres miembro de este espacio de trabajo']
+                        ]
+                    ),
+                    404: error_response(
+                        'No existe un workspace con ese id.',
+                        [
+                            ['workspace_no_encontrado', 404, 'Workspace no encontrado']
+                        ]
+                    ),
+                    500: INTERNAL_ERROR[500],
+                    503: DATABASE_ERROR[503]
+                }
+            },
+            put: {
+                tags: ['Workspaces'],
+                summary: 'Actualizar un espacio de trabajo',
+                operationId: 'updateWorkspace',
+                description: [
+                    'Actualiza el nombre y la descripción del workspace.',
+                    '',
+                    '`name` y `description` son obligatorios (ambos). Solo puede hacerlo un miembro con rol `owner` o `admin`.',
+                    '',
+                    '**Ojo:** el repositorio actual no retorna el documento actualizado, por lo que la respuesta devuelve `data: {}` (sin `workspace_updated`).'
+                ].join('\n'),
+                security: [{ bearerAuth: [] }],
+                parameters: [
+                    { $ref: '#/components/parameters/WorkspaceId' }
+                ],
+                requestBody: {
+                    required: true,
+                    content: json_content(
+                        { $ref: '#/components/schemas/UpdateWorkspaceRequest' },
+                        {
+                            example: {
+                                name: 'Equipo Backend UTN',
+                                description: 'Nueva descripción del espacio'
+                            }
+                        }
+                    )
+                },
+                responses: {
+                    200: success_response(
+                        'Workspace actualizado. `data` llega vacío en la implementación actual.',
+                        { $ref: '#/components/schemas/UpdateWorkspaceResponse' },
+                        {
+                            ok: true,
+                            status: 200,
+                            message: 'Workspace actualizado correctamente',
+                            data: {}
+                        }
+                    ),
+                    400: error_response(
+                        'Header de autenticación inválido, o falta `name`/`description` en el body.',
+                        [
+                            ['header_ausente', 400, 'Auth header is requered'],
+                            ['header_malformado', 400, 'Auth header is malformed'],
+                            ['campos_requeridos', 400, 'name y description son campos requeridos']
+                        ]
+                    ),
+                    401: AUTH_ERRORS[401],
+                    403: error_response(
+                        'El usuario no es miembro del workspace o su rol no es `owner`/`admin`.',
+                        [
+                            ['no_miembro', 403, 'No eres miembro de este espacio de trabajo'],
+                            ['sin_permisos', 403, 'No tienes permisos suficientes para hacer esta operacion']
+                        ]
+                    ),
+                    404: error_response(
+                        'No existe un workspace con ese id.',
+                        [
+                            ['workspace_no_encontrado', 404, 'Workspace no encontrado']
+                        ]
+                    ),
+                    500: INTERNAL_ERROR[500],
+                    503: DATABASE_ERROR[503]
+                }
+            },
+            delete: {
+                tags: ['Workspaces'],
+                summary: 'Eliminar un espacio de trabajo',
+                operationId: 'deleteWorkspace',
+                description: [
+                    'Elimina el workspace y todas sus membresías asociadas.',
+                    '',
+                    'Solo puede hacerlo un miembro con rol `owner`.'
+                ].join('\n'),
+                security: [{ bearerAuth: [] }],
+                parameters: [
+                    { $ref: '#/components/parameters/WorkspaceId' }
+                ],
+                responses: {
+                    200: success_response(
+                        'Workspace eliminado junto con sus membresías.',
+                        { $ref: '#/components/schemas/DeleteWorkspaceResponse' },
+                        {
+                            ok: true,
+                            status: 200,
+                            message: 'Workspace eliminado correctamente',
+                            data: {
+                                workspace_deleted: {
+                                    _id: '6ab01f9a190ff6061955c88a',
+                                    nombre: 'Equipo Backend',
+                                    description: 'Canal de trabajo del equipo de backend',
+                                    fecha_creacion: '2026-09-17T14:56:26.249Z',
+                                    __v: 0
+                                }
+                            }
+                        }
+                    ),
+                    400: AUTH_ERRORS[400],
+                    401: AUTH_ERRORS[401],
+                    403: error_response(
+                        'El usuario no es miembro del workspace o su rol no es `owner`.',
+                        [
+                            ['no_miembro', 403, 'No eres miembro de este espacio de trabajo'],
+                            ['sin_permisos', 403, 'No tienes permisos suficientes para hacer esta operacion']
+                        ]
+                    ),
+                    404: error_response(
+                        'No existe un workspace con ese id.',
+                        [
+                            ['workspace_no_encontrado', 404, 'Workspace no encontrado']
+                        ]
+                    ),
+                    500: INTERNAL_ERROR[500],
+                    503: DATABASE_ERROR[503]
+                }
+            }
+        },
+
+        '/api/workspaces/{workspace_id}/members': {
+            get: {
+                tags: ['Workspaces'],
+                summary: 'Listar los miembros de un espacio de trabajo',
+                operationId: 'getWorkspaceMembers',
+                description: 'Devuelve todas las membresías del workspace con los datos públicos de cada usuario. Requiere ser miembro (cualquier rol).',
+                security: [{ bearerAuth: [] }],
+                parameters: [
+                    { $ref: '#/components/parameters/WorkspaceId' }
+                ],
+                responses: {
+                    200: success_response(
+                        'Lista de miembros del workspace.',
+                        { $ref: '#/components/schemas/GetWorkspaceMembersResponse' },
+                        {
+                            ok: true,
+                            status: 200,
+                            message: 'Miembros obtenidos correctamente',
+                            data: {
+                                members: [
+                                    {
+                                        member_id: '6ab01f9a190ff6061955c890',
+                                        member_rol: 'owner',
+                                        fecha_creacion: '2026-09-17T14:56:26.249Z',
+                                        usuario: {
+                                            id: '6aabff9a190ff6061955c889',
+                                            nombre: 'maria',
+                                            email: 'maria@mail.com'
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ),
+                    400: AUTH_ERRORS[400],
+                    401: AUTH_ERRORS[401],
+                    403: error_response(
+                        'El usuario autenticado no es miembro del workspace.',
+                        [
+                            ['no_miembro', 403, 'No eres miembro de este espacio de trabajo']
+                        ]
+                    ),
+                    404: error_response(
+                        'No existe un workspace con ese id.',
+                        [
+                            ['workspace_no_encontrado', 404, 'Workspace no encontrado']
+                        ]
+                    ),
+                    500: INTERNAL_ERROR[500],
+                    503: DATABASE_ERROR[503]
+                }
+            }
+        },
+
+        /* ------------------------------------------------------------ */
+        /* CHANNELS                                                      */
+        /* ------------------------------------------------------------ */
+
+        '/api/channels': {
+            get: {
+                tags: ['Channels'],
+                summary: 'Listar canales (endpoint de prueba)',
+                operationId: 'getChannels',
+                description: [
+                    'Endpoint de prueba que hoy solo devuelve un mensaje fijo, sin datos.',
+                    '',
+                    'El router está preparado con `mergeParams: true` para montarse también como `/api/workspaces/{workspace_id}/channels`, pero esa ruta todavía no está registrada en la aplicación.'
+                ].join('\n'),
+                security: [{ bearerAuth: [] }],
+                responses: {
+                    200: success_response(
+                        'Respuesta fija del endpoint de prueba.',
+                        { $ref: '#/components/schemas/SuccessfulMessageResponse' },
+                        {
+                            ok: true,
+                            status: 200,
+                            message: 'Channel'
+                        }
+                    ),
+                    400: AUTH_ERRORS[400],
+                    401: AUTH_ERRORS[401],
+                    500: INTERNAL_ERROR[500],
+                    503: DATABASE_ERROR[503]
+                }
+            }
+        }
+    },
+
+    components: {
+
+        securitySchemes: {
+            bearerAuth: {
+                type: 'http',
+                scheme: 'bearer',
+                bearerFormat: 'JWT',
+                description: 'Token devuelto por `POST /api/auth/login`. Formato del header: `Authorization: Bearer <auth_token>`'
+            }
+        },
+
+        parameters: {
+            WorkspaceId: {
+                name: 'workspace_id',
+                in: 'path',
+                required: true,
+                description: 'ObjectId de MongoDB del espacio de trabajo (24 caracteres hexadecimales).',
+                schema: {
+                    type: 'string',
+                    pattern: '^[a-fA-F0-9]{24}$'
+                },
+                example: '6ab01f9a190ff6061955c88a'
+            },
+            UserId: {
+                name: 'user_id',
+                in: 'path',
+                required: true,
+                description: 'ObjectId de MongoDB del usuario (24 caracteres hexadecimales).',
+                schema: {
+                    type: 'string',
+                    pattern: '^[a-fA-F0-9]{24}$'
+                },
+                example: '6aabff9a190ff6061955c889'
+            }
+        },
+
+        schemas: {
+
+            /* -------------------- Requests -------------------- */
+
+            RegisterRequest: {
+                type: 'object',
+                required: ['username', 'email', 'password'],
+                properties: {
+                    username: {
+                        type: 'string',
+                        description: 'Nombre visible del usuario.',
+                        example: 'maria'
+                    },
+                    email: {
+                        type: 'string',
+                        format: 'email',
+                        description: 'Debe tener formato de email y no estar registrado previamente.',
+                        example: 'maria@mail.com'
+                    },
+                    password: {
+                        type: 'string',
+                        format: 'password',
+                        description: 'Contraseña en texto plano. Se guarda encriptada con bcrypt. El registro no exige un mínimo de caracteres.',
+                        example: 'pepe123'
+                    }
+                }
+            },
+
+            LoginRequest: {
+                type: 'object',
+                required: ['email', 'password'],
+                properties: {
+                    email: {
+                        type: 'string',
+                        format: 'email',
+                        example: 'maria@mail.com'
+                    },
+                    password: {
+                        type: 'string',
+                        format: 'password',
+                        example: 'pepe123'
+                    }
+                }
+            },
+
+            ForgotPasswordRequest: {
+                type: 'object',
+                required: ['email'],
+                properties: {
+                    email: {
+                        type: 'string',
+                        format: 'email',
+                        example: 'maria@mail.com'
+                    }
+                }
+            },
+
+            ResetPasswordRequest: {
+                type: 'object',
+                required: ['reset_token', 'new_password'],
+                properties: {
+                    reset_token: {
+                        type: 'string',
+                        description: 'Token JWT que llegó en el enlace del email de restablecimiento.',
+                        example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                    },
+                    new_password: {
+                        type: 'string',
+                        format: 'password',
+                        minLength: 8,
+                        description: 'Nueva contraseña. Debe tener al menos 8 caracteres.',
+                        example: 'nuevaClave123'
+                    }
+                }
+            },
+
+            CreateWorkspaceRequest: {
+                type: 'object',
+                required: ['name'],
+                properties: {
+                    name: {
+                        type: 'string',
+                        minLength: 1,
+                        maxLength: 30,
+                        description: 'Nombre del workspace. Requerido por el schema de Mongoose.',
+                        example: 'Equipo Backend'
+                    },
+                    description: {
+                        type: 'string',
+                        maxLength: 1000,
+                        description: 'Descripción opcional del workspace.',
+                        example: 'Canal de trabajo del equipo de backend'
+                    }
+                }
+            },
+
+            UpdateWorkspaceRequest: {
+                type: 'object',
+                required: ['name', 'description'],
+                description: 'Ambos campos son obligatorios: el controller responde `400` si falta cualquiera de los dos.',
+                properties: {
+                    name: {
+                        type: 'string',
+                        maxLength: 30,
+                        example: 'Equipo Backend UTN'
+                    },
+                    description: {
+                        type: 'string',
+                        maxLength: 1000,
+                        example: 'Nueva descripción del espacio'
+                    }
+                }
+            },
+
+            /* -------------------- Modelos -------------------- */
+
+            User: {
+                type: 'object',
+                description: 'Documento de usuario tal como lo devuelve MongoDB. Incluye el hash de la contraseña porque los endpoints de usuarios no aplican un DTO de salida.',
+                properties: {
+                    _id: {
+                        type: 'string',
+                        pattern: '^[a-fA-F0-9]{24}$',
+                        example: '6aabff9a190ff6061955c889'
+                    },
+                    nombre: {
+                        type: 'string',
+                        example: 'maria'
+                    },
+                    email: {
+                        type: 'string',
+                        format: 'email',
+                        example: 'maria@mail.com'
+                    },
+                    password: {
+                        type: 'string',
+                        description: 'Hash bcrypt de la contraseña (nunca la contraseña original).',
+                        example: '$2b$10$hash...'
+                    },
+                    fecha_creacion: {
+                        type: 'string',
+                        format: 'date-time',
+                        example: '2026-09-17T14:56:26.249Z'
+                    },
+                    activo: {
+                        type: 'boolean',
+                        description: 'Si es `false` el usuario está desactivado de la plataforma.',
+                        example: true
+                    },
+                    email_verificado: {
+                        type: 'boolean',
+                        description: 'Indica si el usuario ya usó el enlace de verificación.',
+                        example: true
+                    },
+                    __v: {
+                        type: 'integer',
+                        description: 'Versión interna del documento en Mongoose.',
+                        example: 0
+                    }
+                }
+            },
+
+            Workspace: {
+                type: 'object',
+                description: 'Documento del espacio de trabajo en MongoDB.',
+                properties: {
+                    _id: {
+                        type: 'string',
+                        pattern: '^[a-fA-F0-9]{24}$',
+                        example: '6ab01f9a190ff6061955c88a'
+                    },
+                    nombre: {
+                        type: 'string',
+                        maxLength: 30,
+                        example: 'Equipo Backend'
+                    },
+                    description: {
+                        type: 'string',
+                        maxLength: 1000,
+                        example: 'Canal de trabajo del equipo de backend'
+                    },
+                    fecha_creacion: {
+                        type: 'string',
+                        format: 'date-time',
+                        example: '2026-09-17T14:56:26.249Z'
+                    },
+                    __v: {
+                        type: 'integer',
+                        example: 0
+                    }
+                }
+            },
+
+            Member: {
+                type: 'object',
+                description: 'Documento de membresía (usuario dentro de un workspace). En la creación, el repositorio envía `active` en lugar de `activo`, por lo que Mongoose descarta ese campo y `activo` queda en su valor por defecto (`false`).',
+                properties: {
+                    _id: {
+                        type: 'string',
+                        pattern: '^[a-fA-F0-9]{24}$',
+                        example: '6ab01f9a190ff6061955c890'
+                    },
+                    fk_id_usuario: {
+                        type: 'string',
+                        pattern: '^[a-fA-F0-9]{24}$',
+                        description: 'ObjectId del usuario miembro.',
+                        example: '6aabff9a190ff6061955c889'
+                    },
+                    fk_id_espacio_trabajo: {
+                        type: 'string',
+                        pattern: '^[a-fA-F0-9]{24}$',
+                        description: 'ObjectId del workspace.',
+                        example: '6ab01f9a190ff6061955c88a'
+                    },
+                    rol: {
+                        type: 'string',
+                        enum: ['user', 'admin', 'owner'],
+                        example: 'owner'
+                    },
+                    fecha_creacion: {
+                        type: 'string',
+                        format: 'date-time',
+                        example: '2026-09-17T14:56:26.249Z'
+                    },
+                    activo: {
+                        type: 'boolean',
+                        example: false
+                    },
+                    __v: {
+                        type: 'integer',
+                        example: 0
+                    }
+                }
+            },
+
+            WorkspaceMembership: {
+                type: 'object',
+                description: 'Resumen de una membresía junto con los datos del workspace, usado en el listado de workspaces del usuario.',
+                properties: {
+                    member_id: {
+                        type: 'string',
+                        pattern: '^[a-fA-F0-9]{24}$',
+                        example: '6ab01f9a190ff6061955c890'
+                    },
+                    member_rol: {
+                        type: 'string',
+                        enum: ['user', 'admin', 'owner'],
+                        example: 'owner'
+                    },
+                    workspace_id: {
+                        type: 'string',
+                        pattern: '^[a-fA-F0-9]{24}$',
+                        example: '6ab01f9a190ff6061955c88a'
+                    },
+                    workspace_nombre: {
+                        type: 'string',
+                        example: 'Equipo Backend'
+                    },
+                    workspace_fecha_creacion: {
+                        type: 'string',
+                        format: 'date-time',
+                        example: '2026-09-17T14:56:26.249Z'
+                    }
+                }
+            },
+
+            WorkspaceMember: {
+                type: 'object',
+                description: 'Membresía con los datos públicos del usuario, usada en el detalle del workspace y en el listado de miembros.',
+                properties: {
+                    member_id: {
+                        type: 'string',
+                        pattern: '^[a-fA-F0-9]{24}$',
+                        example: '6ab01f9a190ff6061955c890'
+                    },
+                    member_rol: {
+                        type: 'string',
+                        enum: ['user', 'admin', 'owner'],
+                        example: 'owner'
+                    },
+                    fecha_creacion: {
+                        type: 'string',
+                        format: 'date-time',
+                        example: '2026-09-17T14:56:26.249Z'
+                    },
+                    usuario: {
+                        type: 'object',
+                        properties: {
+                            id: {
+                                type: 'string',
+                                pattern: '^[a-fA-F0-9]{24}$',
+                                example: '6aabff9a190ff6061955c889'
+                            },
+                            nombre: {
+                                type: 'string',
+                                example: 'maria'
+                            },
+                            email: {
+                                type: 'string',
+                                format: 'email',
+                                example: 'maria@mail.com'
+                            }
+                        }
+                    }
+                }
+            },
+
+            /* -------------------- Responses -------------------- */
+
+            ErrorResponse: {
+                type: 'object',
+                required: ['ok', 'status', 'message'],
+                description: 'Envoltura estándar de errores de la API.',
+                properties: {
+                    ok: {
+                        type: 'boolean',
+                        enum: [false],
+                        example: false
+                    },
+                    status: {
+                        type: 'integer',
+                        description: 'Código HTTP repetido en el body.',
+                        example: 400
+                    },
+                    message: {
+                        type: 'string',
+                        description: 'Descripción legible del error.',
+                        example: 'Email is incorrect'
+                    }
+                }
+            },
+
+            ServiceUnavailableResponse: {
+                type: 'object',
+                required: ['message'],
+                description: 'Respuesta del middleware de conexión a MongoDB. A diferencia del resto de los errores, no incluye `ok` ni `status`.',
+                properties: {
+                    message: {
+                        type: 'string',
+                        example: 'No se pudo conectar a la base de datos'
+                    }
+                }
+            },
+
+            SuccessfulMessageResponse: {
+                type: 'object',
+                required: ['ok', 'status', 'message'],
+                description: 'Respuesta exitosa que solo comunica un mensaje, sin datos adicionales.',
+                properties: {
+                    ok: {
+                        type: 'boolean',
+                        example: true
+                    },
+                    status: {
+                        type: 'integer',
+                        example: 200
+                    },
+                    message: {
+                        type: 'string',
+                        example: 'Operación realizada correctamente'
+                    }
+                }
+            },
+
+            LoginResponse: {
+                type: 'object',
+                required: ['ok', 'status', 'message', 'data'],
+                properties: {
+                    ok: {
+                        type: 'boolean',
+                        example: true
+                    },
+                    status: {
+                        type: 'integer',
+                        example: 200
+                    },
+                    message: {
+                        type: 'string',
+                        example: 'You have logged in successfully'
+                    },
+                    data: {
+                        type: 'object',
+                        required: ['auth_token'],
+                        properties: {
+                            auth_token: {
+                                type: 'string',
+                                description: 'JWT firmado con la información de sesión del usuario.',
+                                example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
+                            }
+                        }
+                    }
+                }
+            },
+
+            VerifyEmailResponse: {
+                type: 'object',
+                required: ['ok', 'status', 'message'],
+                properties: {
+                    ok: {
+                        type: 'boolean',
+                        example: true
+                    },
+                    status: {
+                        type: 'integer',
+                        example: 200
+                    },
+                    message: {
+                        type: 'string',
+                        example: 'Usuario verificado exitosamente'
+                    },
+                    data: {
+                        type: 'object',
+                        description: 'Solo está presente cuando el email ya estaba verificado.',
+                        properties: {
+                            already_verified: {
+                                type: 'boolean',
+                                example: true
+                            }
+                        }
+                    }
+                }
+            },
+
+            GetUsersResponse: {
+                type: 'object',
+                required: ['ok', 'status', 'message', 'data'],
+                properties: {
+                    ok: {
+                        type: 'boolean',
+                        example: true
+                    },
+                    status: {
+                        type: 'integer',
+                        example: 200
+                    },
+                    message: {
+                        type: 'string',
+                        example: 'Get users list'
+                    },
+                    data: {
+                        type: 'object',
+                        required: ['users'],
+                        properties: {
+                            users: {
+                                type: 'array',
+                                items: { $ref: '#/components/schemas/User' }
+                            }
+                        }
+                    }
+                }
+            },
+
+            GetUserResponse: {
+                type: 'object',
+                required: ['ok', 'status', 'message', 'data'],
+                properties: {
+                    ok: {
+                        type: 'boolean',
+                        example: true
+                    },
+                    status: {
+                        type: 'integer',
+                        example: 200
+                    },
+                    message: {
+                        type: 'string',
+                        example: 'Get user details successfully'
+                    },
+                    data: {
+                        type: 'object',
+                        required: ['user'],
+                        properties: {
+                            user: { $ref: '#/components/schemas/User' }
+                        }
+                    }
+                }
+            },
+
+            GetWorkspacesResponse: {
+                type: 'object',
+                required: ['ok', 'status', 'message', 'data'],
+                properties: {
+                    ok: {
+                        type: 'boolean',
+                        example: true
+                    },
+                    status: {
+                        type: 'integer',
+                        example: 200
+                    },
+                    message: {
+                        type: 'string',
+                        example: 'Obtenidos todos los datos'
+                    },
+                    data: {
+                        type: 'object',
+                        required: ['workspaces'],
+                        properties: {
+                            workspaces: {
+                                type: 'array',
+                                items: { $ref: '#/components/schemas/WorkspaceMembership' }
+                            }
+                        }
+                    }
+                }
+            },
+
+            CreateWorkspaceResponse: {
+                type: 'object',
+                required: ['ok', 'status', 'message', 'data'],
+                properties: {
+                    ok: {
+                        type: 'boolean',
+                        example: true
+                    },
+                    status: {
+                        type: 'integer',
+                        example: 201
+                    },
+                    message: {
+                        type: 'string',
+                        example: 'Workspace creado'
+                    },
+                    data: {
+                        type: 'object',
+                        required: ['workspace_created', 'owner_membership'],
+                        properties: {
+                            workspace_created: { $ref: '#/components/schemas/Workspace' },
+                            owner_membership: { $ref: '#/components/schemas/Member' }
+                        }
+                    }
+                }
+            },
+
+            GetWorkspaceResponse: {
+                type: 'object',
+                required: ['ok', 'status', 'message', 'data'],
+                properties: {
+                    ok: {
+                        type: 'boolean',
+                        example: true
+                    },
+                    status: {
+                        type: 'integer',
+                        example: 200
+                    },
+                    message: {
+                        type: 'string',
+                        example: 'Workspace obtenido correctamente'
+                    },
+                    data: {
+                        type: 'object',
+                        required: ['workspace_selected', 'members'],
+                        properties: {
+                            workspace_selected: { $ref: '#/components/schemas/Workspace' },
+                            members: {
+                                type: 'array',
+                                items: { $ref: '#/components/schemas/WorkspaceMember' }
+                            }
+                        }
+                    }
+                }
+            },
+
+            DeleteWorkspaceResponse: {
+                type: 'object',
+                required: ['ok', 'status', 'message', 'data'],
+                properties: {
+                    ok: {
+                        type: 'boolean',
+                        example: true
+                    },
+                    status: {
+                        type: 'integer',
+                        example: 200
+                    },
+                    message: {
+                        type: 'string',
+                        example: 'Workspace eliminado correctamente'
+                    },
+                    data: {
+                        type: 'object',
+                        required: ['workspace_deleted'],
+                        properties: {
+                            workspace_deleted: { $ref: '#/components/schemas/Workspace' }
+                        }
+                    }
+                }
+            },
+
+            UpdateWorkspaceResponse: {
+                type: 'object',
+                required: ['ok', 'status', 'message', 'data'],
+                properties: {
+                    ok: {
+                        type: 'boolean',
+                        example: true
+                    },
+                    status: {
+                        type: 'integer',
+                        example: 200
+                    },
+                    message: {
+                        type: 'string',
+                        example: 'Workspace actualizado correctamente'
+                    },
+                    data: {
+                        type: 'object',
+                        description: 'En la implementación actual llega vacío porque el repositorio no retorna el documento actualizado. El campo `workspace_updated` está contemplado pero hoy no se envía.',
+                        properties: {
+                            workspace_updated: { $ref: '#/components/schemas/Workspace' }
+                        }
+                    }
+                }
+            },
+
+            GetWorkspaceMembersResponse: {
+                type: 'object',
+                required: ['ok', 'status', 'message', 'data'],
+                properties: {
+                    ok: {
+                        type: 'boolean',
+                        example: true
+                    },
+                    status: {
+                        type: 'integer',
+                        example: 200
+                    },
+                    message: {
+                        type: 'string',
+                        example: 'Miembros obtenidos correctamente'
+                    },
+                    data: {
+                        type: 'object',
+                        required: ['members'],
+                        properties: {
+                            members: {
+                                type: 'array',
+                                items: { $ref: '#/components/schemas/WorkspaceMember' }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+export default openapi_document
