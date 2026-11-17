@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import useWorkspaceList from '../../hooks/useWorkspaceList'
 import { deleteWorkspace } from '../../services/workspacesService'
+import { getInitials } from '../../utils/avatar.util'
 import workspace_logo from '../../assets/ava_0018-88.png'
 import './WorkspaceList.css'
 
@@ -9,13 +10,6 @@ import './WorkspaceList.css'
 const AVATAR_COLORS = ['#e8912d', '#2bac76', '#36c5f0', '#e01e5a', '#611f69', '#0b4c8c']
 
 const MAX_VISIBLE_MEMBERS = 4
-
-function getInitials(name = '') {
-    const words = name.trim().split(/\s+/)
-    if (words.length === 0) return ''
-    if (words.length === 1) return words[0].charAt(0).toUpperCase()
-    return (words[0].charAt(0) + words[words.length - 1].charAt(0)).toUpperCase()
-}
 
 function WorkspaceRow({ workspace, onRequestDelete }) {
     const members = workspace.members ?? []
