@@ -9,7 +9,6 @@ import auth_router from "./routes/auth.router.js";
 import user_router from "./routes/user.router.js";
 import workspace_router from "./routes/workspace.router.js";
 import cors from 'cors'
-import requestLogger from "./middlewares/request-logger.middleware.js";
 import swaggerUi from 'swagger-ui-express'
 import ENVIRONMENT from "./config/environment.config.js";
 import openapi_document from './docs/openapi.document.js'
@@ -18,20 +17,7 @@ import openapi_document from './docs/openapi.document.js'
 const PORT = ENVIRONMENT.PORT || 8080
 const app = express()
 
-/*
-Detras de Vercel u otro proxy, request.ip devuelve la IP del proxy.
-Con trust proxy Express toma la IP real del cliente desde X-Forwarded-For.
-*/
-app.set('trust proxy', 1)
-
 app.use(cors())
-
-/*
-Auditoria de consultas: se monta antes de express.json() y del middleware
-de conexion a MongoDB para registrar tambien los errores de JSON malformado
-y los 503 por base de datos no disponible.
-*/
-app.use(requestLogger)
 app.use(express.json())
 
 /*

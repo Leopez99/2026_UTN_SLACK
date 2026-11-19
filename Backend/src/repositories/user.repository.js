@@ -58,13 +58,11 @@ class UserRepository {
     }
 
     async softDeleteById(user_id){
-        const result = await User.findByIdAndUpdate(user_id, {activo: false})
-        console.log(result)
+        await User.findByIdAndUpdate(user_id, {activo: false})
     }
 
     async deleteById (user_id){
-        const result = await User.findByIdAndDelete(user_id)
-        console.log(result)
+        await User.findByIdAndDelete(user_id)
     }
     
     async  getByEmail (email){

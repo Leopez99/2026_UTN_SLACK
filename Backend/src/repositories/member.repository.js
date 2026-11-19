@@ -11,13 +11,11 @@ class MemberRepository {
     }
 
     async deleteById(memberId) {
-        const result = await Member.findByIdAndDelete(memberId)
-        console.log(result)
+        await Member.findByIdAndDelete(memberId)
     }
 
     async updateRoleById(memberId, role) {
-        const result = await Member.findByIdAndUpdate(memberId, { rol: role })
-        console.log(result)
+        await Member.findByIdAndUpdate(memberId, { rol: role })
     }
 
 

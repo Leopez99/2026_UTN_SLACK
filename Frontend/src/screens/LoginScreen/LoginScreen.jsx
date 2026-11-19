@@ -24,7 +24,6 @@ function LoginScreen() {
         sendRequest(
             () => login(formState.email, formState.password)
         )
-        console.log('Usuario intenta iniciar sesion', formState)
     }
 
     /* 

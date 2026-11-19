@@ -28,7 +28,6 @@ export async function getWorkspaces(request, response) {
 
 export async function createWorkspace(request, response) {
 
-    console.log('[CREATE WORKSPACE]', request.user)
     const { name, description } = request.body
 
     const workspace_created = await workspace_repository.createWorkspace(name, description)

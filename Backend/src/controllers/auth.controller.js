@@ -11,7 +11,6 @@ Las consultas (request) tipo GET NO TIENEN body.
 
 export async function register(request, response) {
 
-    console.log("[REGISTER]", request.body)
     const { username, email, password } = request.body
 
     await auth_services.register(username, email, password)
