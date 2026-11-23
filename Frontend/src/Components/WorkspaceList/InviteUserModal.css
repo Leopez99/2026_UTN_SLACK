@@ -1,0 +1,143 @@
+/* Modal de invitacion de usuarios a un espacio de trabajo */
+
+.invite-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(29, 28, 29, 0.5);
+}
+
+.invite-card {
+  width: 100%;
+  max-width: 420px;
+  padding: 22px 22px 18px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 20px 48px rgba(29, 28, 29, 0.28);
+}
+
+.invite-title {
+  margin: 0 0 8px;
+  color: #1d1c1d;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+}
+
+.invite-text {
+  margin: 0 0 16px;
+  color: #616061;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.invite-text strong {
+  color: #1d1c1d;
+}
+
+.invite-form {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.invite-label {
+  margin-top: 8px;
+  color: #1d1c1d;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.invite-input,
+.invite-select {
+  padding: 9px 12px;
+  border: 1px solid #e8e6ee;
+  border-radius: 8px;
+  background: #fff;
+  color: #1d1c1d;
+  font-family: inherit;
+  font-size: 14px;
+  transition: border-color 0.15s ease;
+}
+
+.invite-input:focus,
+.invite-select:focus {
+  outline: none;
+  border-color: #611f69;
+  box-shadow: 0 0 0 2px rgba(97, 31, 105, 0.15);
+}
+
+.invite-input:disabled,
+.invite-select:disabled {
+  background: #f6f5f9;
+  color: #616061;
+  cursor: not-allowed;
+}
+
+.invite-error {
+  margin: 2px 0 4px;
+  color: #e01e5a;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.invite-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.invite-cancel,
+.invite-submit {
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.invite-cancel {
+  border: 1px solid #e8e6ee;
+  background: #fff;
+  color: #1d1c1d;
+}
+
+.invite-cancel:hover:not(:disabled) {
+  background: #f6f5f9;
+}
+
+.invite-submit {
+  border: none;
+  background: #007a5a;
+  color: #fff;
+}
+
+.invite-submit:hover:not(:disabled) {
+  background: #148567;
+}
+
+.invite-cancel:disabled,
+.invite-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.invite-cancel:focus-visible,
+.invite-submit:focus-visible,
+.invite-input:focus-visible,
+.invite-select:focus-visible {
+  outline: 2px solid #611f69;
+  outline-offset: 2px;
+}
+
+@media (max-width: 600px) {
+  .invite-card {
+    padding: 18px 16px 14px;
+  }
+}

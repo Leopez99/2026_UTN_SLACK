@@ -10,6 +10,7 @@ import {
 import authMiddleware from '../middlewares/auth.middleware.js'
 import workspaceMiddleware from '../middlewares/workspace.middleware.js'
 import channel_router from './channels.router.js'
+import invitation_router from './invitations.router.js'
 
 const workspace_router = express.Router()
 
@@ -90,6 +91,16 @@ El router de canales valida la membresia y el rol de cada operacion.
 workspace_router.use(
     '/:workspace_id/channels',
     channel_router
+)
+
+/* 
+Invitaciones del espacio de trabajo.
+El router de invitaciones valida la membresia de cada operacion (cualquier rol puede invitar).
+    POST /api/workspaces/:workspace_id/invitations   (todos los roles)
+*/
+workspace_router.use(
+    '/:workspace_id/invitations',
+    invitation_router
 )
 
 export default workspace_router

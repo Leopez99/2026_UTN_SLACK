@@ -353,7 +353,8 @@
 }
 
 .workspace-card-create,
-.workspace-card-logout {
+.workspace-card-logout,
+.workspace-card-invite {
   padding: 0;
   border: none;
   background: none;
@@ -367,15 +368,22 @@
 }
 
 .workspace-card-create:hover,
-.workspace-card-logout:hover {
+.workspace-card-logout:hover,
+.workspace-card-invite:hover:not(:disabled) {
   text-decoration: underline;
 }
 
 .workspace-card-create:focus-visible,
-.workspace-card-logout:focus-visible {
+.workspace-card-logout:focus-visible,
+.workspace-card-invite:focus-visible {
   outline: 2px solid #611f69;
   outline-offset: 2px;
   border-radius: 2px;
+}
+
+.workspace-card-invite:disabled {
+  cursor: not-allowed;
+  text-decoration: none;
 }
 
 /* --- Estados de carga / error / vacio --- */

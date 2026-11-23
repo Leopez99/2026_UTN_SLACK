@@ -104,3 +104,28 @@ export async function getWorkspaceMembers(workspace_id){
 
     return response_body
 }
+
+export async function createInvitation(workspace_id, { email, channel_id }){
+    const auth_token = localStorage.getItem('auth_token')
+    const response_http = await fetch(
+            API_URL + `/api/workspaces/${workspace_id}/invitations`,
+            {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `bearer ${auth_token}`
+                },
+                body: JSON.stringify({
+                    email: email,
+                    channel_id: channel_id || null
+                })
+            }
+        )
+    const response_body = await response_http.json()
+
+    if(!response_body.ok){
+        throw new Error(response_body.message)
+    }
+
+    return response_body
+}

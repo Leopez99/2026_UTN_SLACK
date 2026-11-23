@@ -4,6 +4,7 @@ import useWorkspaceList from '../../hooks/useWorkspaceList'
 import { deleteWorkspace } from '../../services/workspacesService'
 import { getInitials } from '../../utils/avatar.util'
 import workspace_logo from '../../assets/ava_0018-88.png'
+import InviteUserModal from './InviteUserModal'
 import './WorkspaceList.css'
 
 /* Colores estilo Slack para los avatares de iniciales */
@@ -154,9 +155,20 @@ export default function WorkspaceList() {
     const [delete_loading, setDeleteLoading] = useState(false)
     const [delete_error, setDeleteError] = useState(null)
 
+    /* Modal de invitacion abierto */
+    const [invite_open, setInviteOpen] = useState(false)
+
     function requestDelete(workspace) {
         setDeleteError(null)
         setWorkspaceToDelete(workspace)
+    }
+
+    function requestInvite() {
+        setInviteOpen(true)
+    }
+
+    function cancelInvite() {
+        setInviteOpen(false)
     }
 
     function cancelDelete() {
@@ -267,9 +279,25 @@ export default function WorkspaceList() {
                     >
                         Logearse con otro usuario
                     </button>
+                    <button
+                        className="workspace-card-invite"
+                        type='button'
+                        onClick={requestInvite}
+                        disabled={workspaces_loading || !workspaces_response}
+                    >
+                        Invitar a un usuario
+                    </button>
                 </footer>
 
             </section>
+
+            {invite_open && (
+                <InviteUserModal
+                    workspaces={workspaces_response?.data?.workspaces ?? []}
+                    onClose={cancelInvite}
+                    onInvited={reloadWorkspaces}
+                />
+            )}
 
             {workspace_to_delete && (
                 <div
