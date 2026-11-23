@@ -1111,6 +1111,138 @@ const openapi_document = {
                     503: DATABASE_ERROR[503]
                 }
             }
+        },
+
+        '/api/workspaces/{workspace_id}/channels/{channel_id}/messages': {
+            get: {
+                tags: ['Channels'],
+                summary: 'Listar los mensajes de un canal',
+                operationId: 'getChannelMessages',
+                description: [
+                    'Devuelve los mensajes del canal ordenados por fecha de creación (del más antiguo al más reciente).',
+                    '',
+                    'Requiere ser miembro del workspace (cualquier rol). El autor se devuelve resuelto desde la membresía: `autor.member_id` y `autor.nombre`.'
+                ].join('\n'),
+                security: [{ bearerAuth: [] }],
+                parameters: [
+                    { $ref: '#/components/parameters/WorkspaceId' },
+                    { $ref: '#/components/parameters/ChannelId' }
+                ],
+                responses: {
+                    200: success_response(
+                        'Lista de mensajes del canal.',
+                        { $ref: '#/components/schemas/GetChannelMessagesResponse' },
+                        {
+                            ok: true,
+                            status: 200,
+                            message: 'Mensajes obtenidos correctamente',
+                            data: {
+                                messages: [
+                                    {
+                                        mensaje_id: '6ab01f9a190ff6061955c8b0',
+                                        contenido: '¡Hola equipo!',
+                                        fecha_creacion: '2026-11-15T19:02:00.000Z',
+                                        autor: {
+                                            member_id: '6ab01f9a190ff6061955c890',
+                                            nombre: 'maria'
+                                        }
+                                    }
+                                ]
+                            }
+                        }
+                    ),
+                    400: AUTH_ERRORS[400],
+                    401: AUTH_ERRORS[401],
+                    403: error_response(
+                        'El usuario autenticado no es miembro del workspace.',
+                        [
+                            ['no_miembro', 403, 'No eres miembro de este espacio de trabajo']
+                        ]
+                    ),
+                    404: error_response(
+                        'No existe el workspace, o el canal no pertenece a ese workspace.',
+                        [
+                            ['workspace_no_encontrado', 404, 'Workspace no encontrado'],
+                            ['canal_no_encontrado', 404, 'Canal no encontrado']
+                        ]
+                    ),
+                    500: INTERNAL_ERROR[500],
+                    503: DATABASE_ERROR[503]
+                }
+            },
+            post: {
+                tags: ['Channels'],
+                summary: 'Enviar un mensaje a un canal',
+                operationId: 'createChannelMessage',
+                description: [
+                    'Crea un mensaje en el canal en nombre del usuario autenticado. Cualquier miembro del workspace puede enviar mensajes en cualquiera de sus canales.',
+                    '',
+                    '`content` es obligatorio, se guarda sin espacios al inicio ni al final y admite hasta 30000 caracteres.'
+                ].join('\n'),
+                security: [{ bearerAuth: [] }],
+                parameters: [
+                    { $ref: '#/components/parameters/WorkspaceId' },
+                    { $ref: '#/components/parameters/ChannelId' }
+                ],
+                requestBody: {
+                    required: true,
+                    content: json_content(
+                        { $ref: '#/components/schemas/CreateChannelMessageRequest' },
+                        {
+                            example: {
+                                content: '¡Hola equipo!'
+                            }
+                        }
+                    )
+                },
+                responses: {
+                    201: success_response(
+                        'Mensaje creado.',
+                        { $ref: '#/components/schemas/CreateChannelMessageResponse' },
+                        {
+                            ok: true,
+                            status: 201,
+                            message: 'Mensaje creado',
+                            data: {
+                                message_created: {
+                                    mensaje_id: '6ab01f9a190ff6061955c8b0',
+                                    contenido: '¡Hola equipo!',
+                                    fecha_creacion: '2026-11-15T19:02:00.000Z',
+                                    autor: {
+                                        member_id: '6ab01f9a190ff6061955c890',
+                                        nombre: 'maria'
+                                    }
+                                }
+                            }
+                        }
+                    ),
+                    400: error_response(
+                        'Header de autenticación inválido, o body inválido.',
+                        [
+                            ['header_ausente', 400, 'Auth header is requered'],
+                            ['header_malformado', 400, 'Auth header is malformed'],
+                            ['falta_content', 400, 'content es un campo requerido'],
+                            ['content_largo', 400, 'content no puede superar los 30000 caracteres']
+                        ]
+                    ),
+                    401: AUTH_ERRORS[401],
+                    403: error_response(
+                        'El usuario autenticado no es miembro del workspace.',
+                        [
+                            ['no_miembro', 403, 'No eres miembro de este espacio de trabajo']
+                        ]
+                    ),
+                    404: error_response(
+                        'No existe el workspace, o el canal no pertenece a ese workspace.',
+                        [
+                            ['workspace_no_encontrado', 404, 'Workspace no encontrado'],
+                            ['canal_no_encontrado', 404, 'Canal no encontrado']
+                        ]
+                    ),
+                    500: INTERNAL_ERROR[500],
+                    503: DATABASE_ERROR[503]
+                }
+            }
         }
     },
 
@@ -1301,6 +1433,20 @@ const openapi_document = {
                 }
             },
 
+            CreateChannelMessageRequest: {
+                type: 'object',
+                required: ['content'],
+                properties: {
+                    content: {
+                        type: 'string',
+                        minLength: 1,
+                        maxLength: 30000,
+                        description: 'Texto del mensaje. El controller devuelve `400` si falta o solo tiene espacios.',
+                        example: '¡Hola equipo!'
+                    }
+                }
+            },
+
             /* -------------------- Modelos -------------------- */
 
             User: {
@@ -1410,6 +1556,45 @@ const openapi_document = {
                         type: 'string',
                         format: 'date-time',
                         example: '2026-09-17T14:56:26.249Z'
+                    }
+                }
+            },
+
+            ChannelMessage: {
+                type: 'object',
+                description: 'Mensaje de un canal tal como lo devuelve la API (campos con prefijo `mensaje_` y autor resuelto).',
+                properties: {
+                    mensaje_id: {
+                        type: 'string',
+                        pattern: '^[a-fA-F0-9]{24}$',
+                        example: '6ab01f9a190ff6061955c8b0'
+                    },
+                    contenido: {
+                        type: 'string',
+                        maxLength: 30000,
+                        example: '¡Hola equipo!'
+                    },
+                    fecha_creacion: {
+                        type: 'string',
+                        format: 'date-time',
+                        example: '2026-11-15T19:02:00.000Z'
+                    },
+                    autor: {
+                        type: 'object',
+                        required: ['member_id', 'nombre'],
+                        properties: {
+                            member_id: {
+                                type: 'string',
+                                pattern: '^[a-fA-F0-9]{24}$',
+                                description: 'ObjectId de la membresía (Miembro) que envió el mensaje.',
+                                example: '6ab01f9a190ff6061955c890'
+                            },
+                            nombre: {
+                                type: 'string',
+                                description: 'Nombre visible del usuario autor.',
+                                example: 'maria'
+                            }
+                        }
                     }
                 }
             },
@@ -1842,6 +2027,61 @@ const openapi_document = {
                         required: ['channel_deleted'],
                         properties: {
                             channel_deleted: { $ref: '#/components/schemas/Channel' }
+                        }
+                    }
+                }
+            },
+
+            GetChannelMessagesResponse: {
+                type: 'object',
+                required: ['ok', 'status', 'message', 'data'],
+                properties: {
+                    ok: {
+                        type: 'boolean',
+                        example: true
+                    },
+                    status: {
+                        type: 'integer',
+                        example: 200
+                    },
+                    message: {
+                        type: 'string',
+                        example: 'Mensajes obtenidos correctamente'
+                    },
+                    data: {
+                        type: 'object',
+                        required: ['messages'],
+                        properties: {
+                            messages: {
+                                type: 'array',
+                                items: { $ref: '#/components/schemas/ChannelMessage' }
+                            }
+                        }
+                    }
+                }
+            },
+
+            CreateChannelMessageResponse: {
+                type: 'object',
+                required: ['ok', 'status', 'message', 'data'],
+                properties: {
+                    ok: {
+                        type: 'boolean',
+                        example: true
+                    },
+                    status: {
+                        type: 'integer',
+                        example: 201
+                    },
+                    message: {
+                        type: 'string',
+                        example: 'Mensaje creado'
+                    },
+                    data: {
+                        type: 'object',
+                        required: ['message_created'],
+                        properties: {
+                            message_created: { $ref: '#/components/schemas/ChannelMessage' }
                         }
                     }
                 }

@@ -4,12 +4,11 @@ import useWorkspaceScreen from '../../hooks/useWorkspaceScreen'
 import useWorkspaceChannels from '../../hooks/useWorkspaceChannels'
 import { getSessionUser } from '../../utils/session.util'
 import { findDefaultChannel, groupChannelsByCategory } from '../../utils/channel.util'
-import { createChannel, deleteChannel } from '../../services/channelsService'
+import { createChannel, createChannelMessage, deleteChannel, getChannelMessages } from '../../services/channelsService'
 import WorkspaceRail from './components/WorkspaceRail'
 import ChannelSidebar from './components/ChannelSidebar'
 import ChatArea from './components/ChatArea'
 import MembersPanel from './components/MembersPanel'
-import { MOCK_MESSAGES } from './data/workspaceMockData'
 import './WorkspaceScreen.css'
 
 /*
@@ -17,8 +16,6 @@ Pantalla de un espacio de trabajo con el layout de un servidor de Discord:
 rail de espacios | canales | chat | miembros.
 
 Datos reales: espacio seleccionado, listado de espacios, miembros y canales.
-Datos mock: mensajes (ver data/workspaceMockData.js), hasta que exista el
-endpoint de mensajes.
 
 En pantallas chicas los paneles de canales y miembros se abren como drawers.
 */
@@ -52,6 +49,12 @@ function WorkspaceScreen() {
   const [channel_to_delete, set_channel_to_delete] = useState(null)
   const [delete_loading, set_delete_loading] = useState(false)
   const [delete_error, set_delete_error] = useState(null)
+
+  // Mensajes del canal activo
+  const [messages, set_messages] = useState([])
+  const [messages_loading, set_messages_loading] = useState(false)
+  const [messages_error, set_messages_error] = useState(null)
+  const [messages_reload_key, set_messages_reload_key] = useState(0)
 
   // La pantalla ocupa todo el viewport: el documento no debe scrollear.
   useEffect(() => {
@@ -130,16 +133,80 @@ function WorkspaceScreen() {
   const active_channel =
     channels.find((channel) => String(channel.canal_id) === String(selected_channel_id))
     ?? default_channel
+  const active_channel_id = active_channel?.canal_id ?? null
 
-  const active_messages = (active_channel?.canal_nombre || '').toLowerCase() === 'general'
-    ? MOCK_MESSAGES
-    : []
+  // Carga los mensajes del canal activo. Se limpia la lista al cambiar de canal
+  // para no mostrar mensajes de otro canal mientras llega la respuesta.
+  useEffect(() => {
+    if (!active_channel_id) {
+      set_messages([])
+      set_messages_loading(false)
+      set_messages_error(null)
+      return undefined
+    }
+
+    let ignore = false
+
+    async function loadMessages() {
+      set_messages([])
+      set_messages_loading(true)
+      set_messages_error(null)
+
+      try {
+        const response_body = await getChannelMessages(workspace_id, active_channel_id)
+
+        if (!ignore) {
+          set_messages(response_body?.data?.messages ?? [])
+        }
+      }
+      catch (error) {
+        if (!ignore) {
+          set_messages_error(error.message)
+        }
+      }
+      finally {
+        if (!ignore) {
+          set_messages_loading(false)
+        }
+      }
+    }
+
+    loadMessages()
+
+    return () => {
+      ignore = true
+    }
+  }, [workspace_id, active_channel_id, messages_reload_key])
 
   const toggle_panel = (panel_name) => {
     set_open_panel((current_panel) => (current_panel === panel_name ? null : panel_name))
   }
 
   const close_panel = () => set_open_panel(null)
+
+  function reloadMessages() {
+    set_messages_reload_key((current_key) => current_key + 1)
+  }
+
+  async function handleSendMessage(content) {
+    if (!active_channel_id) {
+      return null
+    }
+
+    const response_body = await createChannelMessage(
+      workspace_id,
+      active_channel_id,
+      content
+    )
+
+    const message_created = response_body?.data?.message_created
+
+    if (message_created) {
+      set_messages((current_messages) => [...current_messages, message_created])
+    }
+
+    return message_created
+  }
 
   async function handleCreateChannel(channel_data) {
     const response_body = await createChannel(workspace_id, channel_data)
@@ -253,12 +320,16 @@ function WorkspaceScreen() {
 
       <ChatArea
         channel={active_channel}
-        messages={active_messages}
+        messages={messages}
+        messages_loading={messages_loading}
+        messages_error={messages_error}
         members_count={members.length}
         channels_open={open_panel === 'canales'}
         members_open={open_panel === 'miembros'}
         on_toggle_channels={() => toggle_panel('canales')}
         on_toggle_members={() => toggle_panel('miembros')}
+        on_reload_messages={reloadMessages}
+        on_send_message={handleSendMessage}
       />
 
       <MembersPanel

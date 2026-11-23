@@ -3,6 +3,7 @@ import channel_repository from "../repositories/channel.repository.js"
 import channel_message_repository from "../repositories/channelMessage.repository.js"
 import ServerError from "../utils/error.util.js"
 import { DEFAULT_CHANNEL_NAME, toChannelResponse } from "../utils/channel.util.js"
+import { toChannelMessageResponse } from "../utils/channelMessage.util.js"
 
 /*
 Los controllers son la capa HTTP de la API:
@@ -10,8 +11,31 @@ Los controllers son la capa HTTP de la API:
 - Y arman la response con el formato que devuelve la API
 
 Estas rutas se montan anidadas en /api/workspaces/:workspace_id/channels,
-por eso el middleware de workspace ya dejo el espacio validado en request.workspace.
+por eso el middleware de workspace ya dejo el espacio validado en request.workspace
+y la membresia del usuario en request.membership.
 */
+
+/* Valida el channel_id de la ruta y que el canal pertenezca al workspace
+   validado por workspaceMiddleware. */
+async function getWorkspaceChannelOrThrow(request) {
+
+    const { channel_id } = request.params
+
+    if (!mongoose.isValidObjectId(channel_id)) {
+        throw new ServerError('Canal no encontrado', 404)
+    }
+
+    const channel = await channel_repository.getById(channel_id)
+
+    const channel_belongs_to_workspace =
+        channel && String(channel.fk_id_espacio_trabajo) === String(request.workspace._id)
+
+    if (!channel_belongs_to_workspace) {
+        throw new ServerError('Canal no encontrado', 404)
+    }
+
+    return channel
+}
 
 export async function getChannels(request, response) {
 
@@ -72,20 +96,7 @@ export async function createChannel(request, response) {
 
 export async function deleteChannel(request, response) {
 
-    const { channel_id } = request.params
-
-    if (!mongoose.isValidObjectId(channel_id)) {
-        throw new ServerError('Canal no encontrado', 404)
-    }
-
-    const channel = await channel_repository.getById(channel_id)
-
-    const channel_belongs_to_workspace =
-        channel && String(channel.fk_id_espacio_trabajo) === String(request.workspace._id)
-
-    if (!channel_belongs_to_workspace) {
-        throw new ServerError('Canal no encontrado', 404)
-    }
+    const channel = await getWorkspaceChannelOrThrow(request)
 
     if (channel.nombre === DEFAULT_CHANNEL_NAME) {
         throw new ServerError('El canal General del espacio no se puede eliminar', 403)
@@ -100,6 +111,54 @@ export async function deleteChannel(request, response) {
         message: 'Canal eliminado correctamente',
         data: {
             channel_deleted: toChannelResponse(channel)
+        }
+    })
+}
+
+
+export async function getChannelMessages(request, response) {
+
+    const channel = await getWorkspaceChannelOrThrow(request)
+    const messages = await channel_message_repository.getAllMessagesByChannelId(channel._id)
+
+    return response.status(200).send({
+        ok: true,
+        status: 200,
+        message: 'Mensajes obtenidos correctamente',
+        data: {
+            messages: messages.map(toChannelMessageResponse)
+        }
+    })
+}
+
+
+export async function createChannelMessage(request, response) {
+
+    const channel = await getWorkspaceChannelOrThrow(request)
+    const { content } = request.body
+
+    if (!content || !String(content).trim()) {
+        throw new ServerError('content es un campo requerido', 400)
+    }
+
+    const message_content = String(content).trim()
+
+    if (message_content.length > 30000) {
+        throw new ServerError('content no puede superar los 30000 caracteres', 400)
+    }
+
+    const message_created = await channel_message_repository.createMessage(
+        request.membership._id,
+        channel._id,
+        message_content
+    )
+
+    return response.status(201).send({
+        ok: true,
+        status: 201,
+        message: 'Mensaje creado',
+        data: {
+            message_created: toChannelMessageResponse(message_created)
         }
     })
 }

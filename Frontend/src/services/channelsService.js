@@ -55,3 +55,28 @@ export async function deleteChannel(workspace_id, channel_id) {
 
     return readResponse(response_http)
 }
+
+export async function getChannelMessages(workspace_id, channel_id) {
+    const response_http = await fetch(
+        API_URL + `/api/workspaces/${workspace_id}/channels/${channel_id}/messages`,
+        {
+            method: 'GET',
+            headers: buildAuthHeaders()
+        }
+    )
+
+    return readResponse(response_http)
+}
+
+export async function createChannelMessage(workspace_id, channel_id, content) {
+    const response_http = await fetch(
+        API_URL + `/api/workspaces/${workspace_id}/channels/${channel_id}/messages`,
+        {
+            method: 'POST',
+            headers: buildAuthHeaders({ 'Content-Type': 'application/json' }),
+            body: JSON.stringify({ content })
+        }
+    )
+
+    return readResponse(response_http)
+}

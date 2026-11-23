@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import Avatar from './Avatar'
 import {
   IconGif,
@@ -114,15 +115,47 @@ function MessageActions() {
 function ChatArea({
   channel,
   messages = [],
+  messages_loading = false,
+  messages_error = null,
   members_count = 0,
   channels_open = false,
   members_open = false,
   on_toggle_channels,
-  on_toggle_members
+  on_toggle_members,
+  on_reload_messages,
+  on_send_message
 }) {
   const timeline = buildTimeline(messages)
   const channel_name = channel?.canal_nombre || 'canal'
   const channel_description = channel?.canal_descripcion || ''
+
+  const [message_text, set_message_text] = useState('')
+  const [sending_message, set_sending_message] = useState(false)
+  const [send_message_error, set_send_message_error] = useState(null)
+
+  async function handleSendMessage(event) {
+    event.preventDefault()
+
+    const content = message_text.trim()
+
+    if (!content || sending_message) {
+      return
+    }
+
+    set_sending_message(true)
+    set_send_message_error(null)
+
+    try {
+      await on_send_message(content)
+      set_message_text('')
+    }
+    catch (error) {
+      set_send_message_error(error.message)
+    }
+    finally {
+      set_sending_message(false)
+    }
+  }
 
   if (!channel) {
     return (
@@ -201,6 +234,23 @@ function ChatArea({
             </p>
           </div>
 
+          {messages_loading && (
+            <p className="ws-chat-empty">Cargando mensajes...</p>
+          )}
+
+          {!messages_loading && messages_error && (
+            <div className="ws-chat-error">
+              <p className="ws-chat-error-text">{messages_error}</p>
+              <button
+                type="button"
+                className="ws-chat-retry"
+                onClick={on_reload_messages}
+              >
+                Reintentar
+              </button>
+            </div>
+          )}
+
           {timeline.map((item) => {
             if (item.type === 'day') {
               return (
@@ -246,7 +296,7 @@ function ChatArea({
             )
           })}
 
-          {timeline.length === 0 && (
+          {!messages_loading && !messages_error && timeline.length === 0 && (
             <p className="ws-chat-empty">
               Todavía no hay mensajes en este canal.
             </p>
@@ -256,7 +306,7 @@ function ChatArea({
       </div>
 
       <div className="ws-composer-wrap">
-        <div className="ws-composer">
+        <form className="ws-composer" onSubmit={handleSendMessage}>
           <button type="button" className="ws-composer-add" title="Adjuntar archivo" aria-label="Adjuntar archivo">
             <span aria-hidden="true">+</span>
           </button>
@@ -266,6 +316,10 @@ function ChatArea({
             type="text"
             placeholder={`Enviar mensaje a #${channel_name}`}
             aria-label={`Enviar mensaje a #${channel_name}`}
+            value={message_text}
+            onChange={(event) => set_message_text(event.target.value)}
+            maxLength={30000}
+            disabled={sending_message}
           />
 
           <div className="ws-composer-actions">
@@ -275,11 +329,21 @@ function ChatArea({
             <button type="button" className="ws-icon-button" title="GIF" aria-label="GIF">
               <IconGif size={20} />
             </button>
-            <button type="button" className="ws-icon-button ws-composer-send" title="Enviar mensaje" aria-label="Enviar mensaje">
+            <button
+              type="submit"
+              className="ws-icon-button ws-composer-send"
+              title="Enviar mensaje"
+              aria-label="Enviar mensaje"
+              disabled={!message_text.trim() || sending_message}
+            >
               <IconSend size={19} />
             </button>
           </div>
-        </div>
+        </form>
+
+        {send_message_error && (
+          <p className="ws-composer-error" role="alert">{send_message_error}</p>
+        )}
       </div>
 
     </section>
