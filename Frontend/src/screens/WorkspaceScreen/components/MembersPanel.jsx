@@ -1,5 +1,5 @@
 import Avatar from './Avatar'
-import { IconClose, IconSearch } from './Icons'
+import { IconClose } from './Icons'
 
 const ROLE_GROUPS = [
   { rol: 'owner', label: 'Dueño' },
@@ -50,15 +50,6 @@ function MembersPanel({ members = [], is_open = false, on_close }) {
           <IconClose size={20} />
         </button>
       </header>
-
-      <div className="ws-members-search">
-        <IconSearch size={16} className="ws-members-search-icon" />
-        <input
-          type="search"
-          placeholder="Buscar miembros"
-          aria-label="Buscar miembros"
-        />
-      </div>
 
       <div className="ws-members-scroll">
         {members_count === 0 && (

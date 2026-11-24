@@ -20,8 +20,11 @@
   --ws-red: #f23f43;
   --ws-divider: rgba(78, 80, 88, 0.48);
 
+  /* Ancho del sidebar de canales: lo escribe el drag de .ws-sidebar-resizer */
+  --ws-sidebar-width: 236px;
+
   display: grid;
-  grid-template-columns: 72px 236px minmax(0, 1fr) 240px;
+  grid-template-columns: 72px var(--ws-sidebar-width) minmax(0, 1fr) 240px;
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
@@ -191,11 +194,46 @@ body.ws-scroll-locked {
 /* ---------- Sidebar de canales ---------- */
 
 .ws-sidebar {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-width: 0;
   min-height: 0;
   background: var(--ws-bg-sidebar);
+}
+
+/* Borde derecho del sidebar: arrastrarlo cambia el ancho de la columna */
+.ws-sidebar-resizer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 5;
+  width: 5px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.ws-sidebar-resizer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 2px;
+  background: transparent;
+  transition: background 0.15s ease;
+}
+
+.ws-sidebar-resizer:hover::after,
+body.ws-resizing .ws-sidebar-resizer::after {
+  background: var(--ws-accent);
+}
+
+/* Estado global durante el arrastre: cursor consistente y sin seleccion */
+body.ws-resizing {
+  cursor: col-resize;
+  user-select: none;
 }
 
 .ws-sidebar-header {
@@ -604,13 +642,6 @@ body.ws-scroll-locked {
   white-space: nowrap;
 }
 
-.ws-chat-tools {
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  flex: 0 0 auto;
-}
-
 .ws-messages {
   flex: 1;
   min-height: 0;
@@ -942,40 +973,6 @@ body.ws-scroll-locked {
   font-weight: 800;
   letter-spacing: 0.4px;
   text-transform: uppercase;
-}
-
-.ws-members-search {
-  position: relative;
-  flex: 0 0 auto;
-  padding: 10px 10px 4px;
-}
-
-.ws-members-search-icon {
-  position: absolute;
-  top: 17px;
-  left: 18px;
-  color: var(--ws-text-faint);
-  pointer-events: none;
-}
-
-.ws-members-search input {
-  width: 100%;
-  height: 30px;
-  padding: 0 8px 0 30px;
-  border: none;
-  border-radius: 4px;
-  background: var(--ws-bg-rail);
-  color: var(--ws-text);
-  font-size: 13px;
-  outline: none;
-}
-
-.ws-members-search input::placeholder {
-  color: var(--ws-text-faint);
-}
-
-.ws-members-search input:focus {
-  box-shadow: 0 0 0 1px var(--ws-accent);
 }
 
 .ws-members-scroll {
@@ -1485,6 +1482,11 @@ body.ws-scroll-locked {
     transform: translateX(0);
   }
 
+  /* En drawer el ancho es fijo: el handle de resize no tiene sentido */
+  .ws-sidebar-resizer {
+    display: none;
+  }
+
   .ws-sidebar-close,
   .ws-header-menu {
     display: grid;
@@ -1569,10 +1571,6 @@ body.ws-scroll-locked {
 
   .ws-chat-title {
     font-size: 15px;
-  }
-
-  .ws-chat-tools .ws-icon-button:not(.ws-members-toggle) {
-    display: none;
   }
 
   .ws-chat-welcome {

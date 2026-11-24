@@ -6,7 +6,6 @@ import {
   IconMenu,
   IconMore,
   IconReply,
-  IconSearch,
   IconSend,
   IconSmile,
   IconUsers
@@ -224,22 +223,17 @@ function ChatArea({
           )}
         </div>
 
-        <div className="ws-chat-tools">
-          <button type="button" className="ws-icon-button" title="Buscar en el canal" aria-label="Buscar en el canal">
-            <IconSearch size={20} />
-          </button>
-          <button
-            type="button"
-            className="ws-icon-button ws-members-toggle"
-            title={`Miembros del espacio (${members_count})`}
-            aria-label={`Miembros del espacio (${members_count})`}
-            aria-controls="ws-members-panel"
-            aria-expanded={members_open}
-            onClick={on_toggle_members}
-          >
-            <IconUsers size={20} />
-          </button>
-        </div>
+        <button
+          type="button"
+          className="ws-icon-button ws-members-toggle"
+          title={`Miembros del espacio (${members_count})`}
+          aria-label={`Miembros del espacio (${members_count})`}
+          aria-controls="ws-members-panel"
+          aria-expanded={members_open}
+          onClick={on_toggle_members}
+        >
+          <IconUsers size={20} />
+        </button>
       </header>
 
       <div className="ws-messages" ref={messages_ref}>

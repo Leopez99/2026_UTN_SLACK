@@ -17,7 +17,7 @@ inferior tambien son datos reales.
 
 En pantallas chicas se muestra como drawer, por eso recibe is_open/on_close.
 Crear y borrar canales solo esta disponible para owner/admin (el backend
-tambien lo valida).
+tambien lo valida). El borde derecho es redimensionable con el mouse.
 */
 function ChannelSidebar({
   workspace_name = 'Espacio de trabajo',
@@ -30,6 +30,7 @@ function ChannelSidebar({
   can_manage_channels = false,
   is_open = false,
   on_close,
+  on_resize_start,
   on_select_channel,
   on_reload_channels,
   on_create_channel,
@@ -302,6 +303,16 @@ function ChannelSidebar({
           </button>
         </div>
       </footer>
+
+      {on_resize_start && (
+        <div
+          className="ws-sidebar-resizer"
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Redimensionar panel de canales"
+          onMouseDown={on_resize_start}
+        />
+      )}
 
     </aside>
   )

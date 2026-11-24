@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import useWorkspaceScreen from '../../hooks/useWorkspaceScreen'
 import useWorkspaceChannels from '../../hooks/useWorkspaceChannels'
@@ -23,6 +23,32 @@ Datos reales: espacio seleccionado, listado de espacios, miembros y canales.
 En pantallas chicas los paneles de canales y miembros se abren como drawers.
 */
 
+// Limites del ancho del sidebar de canales (redimensionable con el mouse).
+const SIDEBAR_MIN_WIDTH = 200
+const SIDEBAR_MAX_WIDTH = 480
+const SIDEBAR_DEFAULT_WIDTH = 236
+const SIDEBAR_WIDTH_STORAGE_KEY = 'dislack:sidebar-width'
+
+// Lee el ancho guardado de la ultima sesion; si no existe o es invalido
+// vuelve al ancho por defecto.
+function readStoredSidebarWidth() {
+  try {
+    const stored_width = Number(window.localStorage.getItem(SIDEBAR_WIDTH_STORAGE_KEY))
+
+    if (Number.isFinite(stored_width) && stored_width > 0) {
+      return Math.min(
+        Math.max(stored_width, SIDEBAR_MIN_WIDTH),
+        SIDEBAR_MAX_WIDTH
+      )
+    }
+  }
+  catch {
+    // localStorage puede no estar disponible: se usa el ancho por defecto.
+  }
+
+  return SIDEBAR_DEFAULT_WIDTH
+}
+
 function WorkspaceScreen() {
   const { workspace_id } = useParams()
 
@@ -44,6 +70,11 @@ function WorkspaceScreen() {
   // Panel lateral abierto en mobile/tablet: 'canales' | 'miembros' | null
   const [open_panel, set_open_panel] = useState(null)
   const [viewport_width, set_viewport_width] = useState(0)
+
+  // Ancho del sidebar de canales, ajustable arrastrando su borde derecho
+  // y recordado entre visitas con localStorage.
+  const [sidebar_width, set_sidebar_width] = useState(readStoredSidebarWidth)
+  const screen_ref = useRef(null)
 
   // Canal seleccionado en el sidebar (null = usar el canal General o el primero)
   const [selected_channel_id, set_selected_channel_id] = useState(null)
@@ -84,6 +115,55 @@ function WorkspaceScreen() {
 
     return () => window.removeEventListener('resize', sync_viewport_width)
   }, [])
+
+  // Aplica el ancho del sidebar a la variable CSS del grid.
+  useEffect(() => {
+    screen_ref.current?.style.setProperty('--ws-sidebar-width', `${sidebar_width}px`)
+  }, [sidebar_width])
+
+  // Arrastre del borde derecho del sidebar: mientras se mueve el mouse se
+  // escribe la variable CSS directo en el DOM (sin re-render por frame) y
+  // al soltar se guarda el valor final en estado y en localStorage.
+  function handleSidebarResizeStart(event) {
+    event.preventDefault()
+
+    const start_x = event.clientX
+    const start_width = sidebar_width
+    const screen_element = screen_ref.current
+
+    let current_width = start_width
+
+    const set_width = (width) => {
+      current_width = Math.min(
+        Math.max(width, SIDEBAR_MIN_WIDTH),
+        SIDEBAR_MAX_WIDTH
+      )
+      screen_element?.style.setProperty('--ws-sidebar-width', `${current_width}px`)
+    }
+
+    const handle_move = (move_event) => {
+      set_width(start_width + (move_event.clientX - start_x))
+    }
+
+    const handle_up = () => {
+      window.removeEventListener('mousemove', handle_move)
+      window.removeEventListener('mouseup', handle_up)
+      document.body.classList.remove('ws-resizing')
+
+      set_sidebar_width(current_width)
+
+      try {
+        window.localStorage.setItem(SIDEBAR_WIDTH_STORAGE_KEY, String(current_width))
+      }
+      catch {
+        // Sin localStorage disponible el ancho solo vive mientras la pestania.
+      }
+    }
+
+    document.body.classList.add('ws-resizing')
+    window.addEventListener('mousemove', handle_move)
+    window.addEventListener('mouseup', handle_up)
+  }
 
   useEffect(() => {
     if (open_panel === 'canales' && viewport_width > 900) {
@@ -342,7 +422,7 @@ function WorkspaceScreen() {
   }
 
   return (
-    <div className="workspace-screen">
+    <div className="workspace-screen" ref={screen_ref}>
 
       <WorkspaceRail
         workspaces={workspaces}
@@ -361,6 +441,7 @@ function WorkspaceScreen() {
         can_manage_channels={can_manage_channels}
         is_open={open_panel === 'canales'}
         on_close={close_panel}
+        on_resize_start={handleSidebarResizeStart}
         on_select_channel={set_selected_channel_id}
         on_reload_channels={reloadChannels}
         on_create_channel={handleCreateChannel}
