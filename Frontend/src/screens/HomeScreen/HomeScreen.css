@@ -267,31 +267,95 @@
 
   .home-invite-card {
     margin-top: 0;
+    padding: 14px;
+    gap: 14px;
+  }
+
+  /* En tablet y celular el topbar queda solo con el logo: las acciones se
+     ocultan porque el footer de la tarjeta de espacios ya ofrece
+     "Crear un nuevo espacio de trabajo" y "Probar con otro correo". */
+  .home-topbar-actions {
+    display: none;
+  }
+
+  .home-topbar {
+    justify-content: center;
+    padding: 8px 16px;
+  }
+
+  .home-brand {
+    padding: 7px 12px;
+  }
+
+  .home-brand-mark {
+    width: 28px;
+  }
+
+  .home-brand-wordmark {
+    height: 20px;
+  }
+
+  /* Tarjeta de invitar mas compacta cuando esta apilada */
+  .home-invite-art {
+    width: 64px;
+    height: 64px;
+  }
+
+  .home-invite-art svg {
+    width: 28px;
+    height: 28px;
+  }
+
+  .home-invite-title {
+    font-size: 15px;
+  }
+
+  .home-invite-text {
+    margin-bottom: 12px;
   }
 }
 
 @media (max-width: 700px) {
-  .home-topbar {
-    flex-wrap: wrap;
-    padding: 10px 16px 12px;
-  }
-
-  .home-topbar-actions {
-    position: static;
-    transform: none;
-    flex-wrap: wrap;
-  }
-
   .home-hero {
-    padding: 40px 16px 20px;
+    padding: 32px 16px 18px;
   }
 
   .home-title {
-    font-size: 30px;
+    font-size: 28px;
   }
 
   .home-content {
-    padding: 0 16px 48px;
+    padding: 0 16px 40px;
     margin-top: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .home-topbar {
+    padding: 6px 12px;
+  }
+
+  .home-brand-mark {
+    width: 24px;
+  }
+
+  .home-brand-wordmark {
+    height: 18px;
+  }
+
+  .home-hero {
+    padding: 24px 12px 14px;
+  }
+
+  .home-title {
+    font-size: 26px;
+  }
+
+  .home-subtitle {
+    font-size: 14.5px;
+  }
+
+  .home-content {
+    padding: 0 12px 32px;
   }
 }

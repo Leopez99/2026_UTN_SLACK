@@ -385,21 +385,64 @@
     border-radius: 12px;
   }
 
+  .workspace-card-tabs {
+    padding: 0 14px;
+  }
+
+  .workspace-card-tab {
+    font-size: 13px;
+  }
+
   .workspace-card-body {
-    padding: 16px 14px 18px;
+    padding: 12px 12px 16px;
+  }
+
+  .workspace-card-footer {
+    padding: 12px 14px 14px;
+  }
+
+  .workspace-row-link {
+    gap: 10px;
+    padding: 8px 6px;
+  }
+
+  .workspace-row-logo {
+    flex-basis: 36px;
+    width: 36px;
+    height: 36px;
   }
 
   .workspace-row-name {
-    font-size: 16px;
+    font-size: 15px;
   }
 
   .workspace-row-description {
     font-size: 12px;
   }
 
+  /* En pantallas angostas el nombre admite dos lineas antes de cortar */
+  .workspace-row-name,
+  .workspace-row-description {
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    white-space: normal;
+  }
+
+  .workspace-row-avatar {
+    width: 20px;
+    height: 20px;
+    font-size: 9px;
+  }
+
+  .workspace-row-count {
+    font-size: 12px;
+  }
+
   .workspace-row-arrow {
-    width: 60px;
-    height: 60px;
+    width: 22px;
+    height: 22px;
+    padding-left: 4px;
   }
 
   /* En pantallas tactiles no hay hover: la franja de eliminar queda visible */
@@ -413,5 +456,9 @@
 
   .workspace-confirm-card {
     padding: 18px 16px 14px;
+  }
+
+  .workspace-confirm-actions {
+    flex-wrap: wrap;
   }
 }
