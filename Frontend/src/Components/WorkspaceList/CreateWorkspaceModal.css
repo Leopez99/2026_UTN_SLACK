@@ -1,0 +1,203 @@
+/* Modal de creacion de un espacio de trabajo (mismo patron que InviteUserModal) */
+
+.create-workspace-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(29, 28, 29, 0.5);
+}
+
+.create-workspace-card {
+  width: 100%;
+  max-width: 440px;
+  padding: 22px 22px 18px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 20px 48px rgba(29, 28, 29, 0.28);
+}
+
+.create-workspace-card-success {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.create-workspace-title {
+  margin: 0 0 8px;
+  color: #1d1c1d;
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+}
+
+.create-workspace-text {
+  margin: 0 0 16px;
+  color: #616061;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.create-workspace-text strong {
+  color: #1d1c1d;
+}
+
+.create-workspace-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.create-workspace-label {
+  margin-bottom: 6px;
+  color: #1d1c1d;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.create-workspace-label-optional {
+  color: #616061;
+  font-weight: 500;
+}
+
+.create-workspace-input,
+.create-workspace-textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #e8e6ee;
+  border-radius: 8px;
+  background: #fff;
+  color: #1d1c1d;
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition:
+    border-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.create-workspace-textarea {
+  resize: vertical;
+  min-height: 90px;
+  line-height: 1.45;
+}
+
+.create-workspace-input + .create-workspace-label {
+  margin-top: 14px;
+}
+
+.create-workspace-input::placeholder,
+.create-workspace-textarea::placeholder {
+  color: #9b98a1;
+}
+
+.create-workspace-input:hover,
+.create-workspace-textarea:hover {
+  border-color: #d9d3e0;
+}
+
+.create-workspace-input:focus,
+.create-workspace-textarea:focus {
+  border-color: #611f69;
+  box-shadow: 0 0 0 3px rgba(97, 31, 105, 0.12);
+}
+
+.create-workspace-input:disabled,
+.create-workspace-textarea:disabled {
+  background: #f6f5f9;
+  color: #616061;
+  cursor: not-allowed;
+}
+
+.create-workspace-counter {
+  align-self: flex-end;
+  margin-top: 4px;
+  color: #9b98a1;
+  font-size: 11px;
+}
+
+.create-workspace-error {
+  margin: 8px 0 4px;
+  color: #e01e5a;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.create-workspace-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.create-workspace-cancel,
+.create-workspace-submit {
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.create-workspace-cancel {
+  border: 1px solid #e8e6ee;
+  background: #fff;
+  color: #1d1c1d;
+}
+
+.create-workspace-cancel:hover:not(:disabled) {
+  background: #f6f5f9;
+}
+
+.create-workspace-submit {
+  border: none;
+  background: #4a154b;
+  color: #fff;
+}
+
+.create-workspace-submit:hover:not(:disabled) {
+  background: #611f69;
+}
+
+.create-workspace-cancel:disabled,
+.create-workspace-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.create-workspace-cancel:focus-visible,
+.create-workspace-submit:focus-visible,
+.create-workspace-input:focus-visible,
+.create-workspace-textarea:focus-visible {
+  outline: 2px solid #611f69;
+  outline-offset: 2px;
+}
+
+/* --- Estado de exito --- */
+
+.create-workspace-icon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 14px;
+  border-radius: 50%;
+  background: #eaf6ef;
+  color: #2bac76;
+}
+
+.create-workspace-card-success .create-workspace-text {
+  margin-bottom: 4px;
+}
+
+@media (max-width: 600px) {
+  .create-workspace-card {
+    padding: 18px 16px 14px;
+  }
+}

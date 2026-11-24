@@ -116,7 +116,8 @@ export default function WorkspaceList({
     workspaces_response,
     workspaces_error,
     workspaces_loading,
-    onReload
+    onReload,
+    onCreateWorkspace
 }) {
 
     /* Workspace pendiente de confirmar para eliminar */
@@ -227,12 +228,13 @@ export default function WorkspaceList({
                 </div>
 
                 <footer className="workspace-card-footer">
-                    <Link
+                    <button
+                        type="button"
                         className="workspace-card-footer-link"
-                        to="/create-workspace"
+                        onClick={onCreateWorkspace}
                     >
                         Crear un nuevo espacio de trabajo
-                    </Link>
+                    </button>
 
                     <p className="workspace-card-footer-help">
                         ¿No encuentras tu espacio de trabajo?{' '}

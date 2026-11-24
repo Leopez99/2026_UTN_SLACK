@@ -95,12 +95,16 @@ body.ws-scroll-locked {
   place-items: center;
   width: 48px;
   height: 48px;
+  padding: 0;
+  border: none;
   border-radius: 50%;
   background: #313338;
   color: var(--ws-text-bright);
+  font-family: inherit;
   font-size: 15px;
   font-weight: 800;
   text-decoration: none;
+  cursor: pointer;
   transition: border-radius 0.15s ease, background 0.15s ease, color 0.15s ease;
 }
 

@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router'
+import { useNavigate } from 'react-router'
 import WorkspaceList from '../../Components/WorkspaceList/WorkspaceList'
 import InviteUserModal from '../../Components/WorkspaceList/InviteUserModal'
+import CreateWorkspaceModal from '../../Components/WorkspaceList/CreateWorkspaceModal'
 import useWorkspaceList from '../../hooks/useWorkspaceList'
 import logo_mark from '../../assets/Logos dislack/Logo dislack.png'
 import logo_wordmark from '../../assets/Logos dislack/Titulo dislack.png'
@@ -30,6 +31,17 @@ function HomeScreeen() {
 
   function cancelInvite() {
     setInviteOpen(false)
+  }
+
+  /* Modal de creacion de espacio de trabajo (topbar, tarjeta de la lista y rail) */
+  const [create_open, setCreateOpen] = useState(false)
+
+  function requestCreateWorkspace() {
+    setCreateOpen(true)
+  }
+
+  function cancelCreateWorkspace() {
+    setCreateOpen(false)
   }
 
   return (
@@ -61,12 +73,13 @@ function HomeScreeen() {
             Logearse con otro usuario
           </button>
 
-          <Link
+          <button
+            type="button"
             className="home-topbar-button home-topbar-button-create"
-            to="/create-workspace"
+            onClick={requestCreateWorkspace}
           >
             Crear un nuevo espacio de trabajo
-          </Link>
+          </button>
         </div>
       </header>
 
@@ -104,6 +117,7 @@ function HomeScreeen() {
               workspaces_error={workspaces_error}
               workspaces_loading={workspaces_loading}
               onReload={reloadWorkspaces}
+              onCreateWorkspace={requestCreateWorkspace}
             />
           </section>
 
@@ -155,6 +169,13 @@ function HomeScreeen() {
           workspaces={workspaces}
           onClose={cancelInvite}
           onInvited={reloadWorkspaces}
+        />
+      )}
+
+      {create_open && (
+        <CreateWorkspaceModal
+          onClose={cancelCreateWorkspace}
+          onCreated={reloadWorkspaces}
         />
       )}
 

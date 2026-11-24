@@ -11,6 +11,7 @@ import WorkspaceRail from './components/WorkspaceRail'
 import ChannelSidebar from './components/ChannelSidebar'
 import ChatArea from './components/ChatArea'
 import MembersPanel from './components/MembersPanel'
+import CreateWorkspaceModal from '../../Components/WorkspaceList/CreateWorkspaceModal'
 import './WorkspaceScreen.css'
 
 /*
@@ -61,6 +62,9 @@ function WorkspaceScreen() {
   // Aviso de mensajes nuevos de otros miembros (no se insertan solos: el
   // usuario decide cuando recargar con el boton de ChatArea)
   const [new_messages_notice, set_new_messages_notice] = useState(null)
+
+  // Modal de creacion de espacio de trabajo (lo dispara el "+" del rail)
+  const [create_workspace_open, set_create_workspace_open] = useState(false)
 
   // La pantalla ocupa todo el viewport: el documento no debe scrollear.
   useEffect(() => {
@@ -343,6 +347,7 @@ function WorkspaceScreen() {
       <WorkspaceRail
         workspaces={workspaces}
         active_workspace_id={workspace_id}
+        onCreateWorkspace={() => set_create_workspace_open(true)}
       />
 
       <ChannelSidebar
@@ -433,6 +438,13 @@ function WorkspaceScreen() {
             </div>
           </div>
         </div>
+      )}
+
+      {create_workspace_open && (
+        <CreateWorkspaceModal
+          onClose={() => set_create_workspace_open(false)}
+          onCreated={reloadScreen}
+        />
       )}
 
     </div>

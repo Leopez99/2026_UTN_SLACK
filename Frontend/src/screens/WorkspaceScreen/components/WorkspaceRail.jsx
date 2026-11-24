@@ -6,7 +6,7 @@ import { IconPlus } from './Icons'
 Rail izquierdo: espacios de trabajo del usuario, como los servidores de Discord.
 El espacio activo se marca con la píldora blanca de la izquierda.
 */
-function WorkspaceRail({ workspaces = [], active_workspace_id }) {
+function WorkspaceRail({ workspaces = [], active_workspace_id, onCreateWorkspace }) {
   return (
     <nav className="ws-rail" aria-label="Espacios de trabajo">
 
@@ -44,14 +44,15 @@ function WorkspaceRail({ workspaces = [], active_workspace_id }) {
         })}
       </ul>
 
-      <Link
+      <button
+        type="button"
         className="ws-rail-item ws-rail-add"
-        to="/create-workspace"
         title="Crear un espacio de trabajo"
         aria-label="Crear un espacio de trabajo"
+        onClick={onCreateWorkspace}
       >
         <IconPlus size={24} />
-      </Link>
+      </button>
 
     </nav>
   )
