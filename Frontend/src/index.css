@@ -42,4 +42,17 @@ body,
   /* Movimiento */
   --transition-fast: 0.15s ease;
   --transition-press: 0.05s ease;
+
+  /* Tema Discord (pantallas de verificado / restablecer contraseña) */
+  --discord-bg: #1e1f22;
+  --discord-card: #313338;
+  --discord-input: #1e1f22;
+  --discord-text: #f2f3f5;
+  --discord-text-muted: #949ba4;
+  --discord-blurple: #5865f2;
+  --discord-blurple-hover: #4752c4;
+  --discord-success: #23a559;
+  --discord-danger: #f23f43;
+  --discord-border: #3f4147;
+  --discord-radius: 8px;
 }

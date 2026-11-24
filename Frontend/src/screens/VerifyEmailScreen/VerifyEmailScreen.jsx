@@ -2,6 +2,7 @@ import React, { useEffect, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router'
 import useRequest from '../../hooks/useRequest'
 import { verifyEmail } from '../../services/authService'
+import logo_dislack from '../../assets/Logos dislack/Logo dislack.png'
 import './VerifyEmailScreen.css'
 
 /* 
@@ -60,6 +61,11 @@ function VerifyEmailScreen() {
             <main className="verify-email-card">
 
                 <header className="verify-email-header">
+                    <img
+                        className="verify-email-logo"
+                        src={logo_dislack}
+                        alt="Logo de Dislack"
+                    />
                     <h1 className="verify-email-title">
                         {is_success ? 'Correo verificado' : is_error ? 'No pudimos verificar tu correo' : 'Verificando tu correo'}
                     </h1>

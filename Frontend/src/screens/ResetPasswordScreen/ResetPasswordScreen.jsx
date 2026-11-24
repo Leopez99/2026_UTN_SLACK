@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router'
 import useForm from '../../hooks/useForm'
 import useRequest from '../../hooks/useRequest'
 import { resetPassword } from '../../services/authService'
+import logo_dislack from '../../assets/Logos dislack/Logo dislack.png'
 import './ResetPasswordScreen.css'
 
 /*
@@ -100,6 +101,11 @@ function ResetPasswordScreen() {
       <div className="reset-password-screen">
         <main className="reset-password-card">
           <header className="reset-password-header">
+            <img
+              className="reset-password-logo"
+              src={logo_dislack}
+              alt="Logo de Dislack"
+            />
             <h1 className="reset-password-title">No pudimos restablecer tu contraseña</h1>
             <p className="reset-password-subtitle">
               El enlace no incluye un token válido. Pedí uno nuevo para continuar.
@@ -122,6 +128,11 @@ function ResetPasswordScreen() {
       <div className="reset-password-screen">
         <main className="reset-password-card">
           <header className="reset-password-header">
+            <img
+              className="reset-password-logo"
+              src={logo_dislack}
+              alt="Logo de Dislack"
+            />
             <h1 className="reset-password-title">Contraseña actualizada</h1>
             <p className="reset-password-subtitle">
               Ya podés iniciar sesión con tu nueva contraseña. Te estamos redirigiendo...
@@ -149,6 +160,11 @@ function ResetPasswordScreen() {
       <main className="reset-password-card">
 
         <header className="reset-password-header">
+          <img
+            className="reset-password-logo"
+            src={logo_dislack}
+            alt="Logo de Dislack"
+          />
           <h1 className="reset-password-title">Restablecé tu contraseña</h1>
           <p className="reset-password-subtitle">
             Elegí una contraseña nueva de al menos 8 caracteres y confirmala.
