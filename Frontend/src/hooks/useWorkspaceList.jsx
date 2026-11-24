@@ -1,4 +1,4 @@
-import { useEffect } from "react"
+import { useCallback, useEffect } from "react"
 import useRequest from "./useRequest"
 import { getAllWorkspaces, getWorkspaceMembers } from "../services/workspacesService.js"
 
@@ -43,11 +43,16 @@ function useWorkspaceList (){
         []
     )
     
-    function reloadWorkspaces() {
-        sendRequest(
-            () => getAllWorkspacesWithMembers()
-        )
-    }
+    /* Estabilizado con useCallback para que la referencia que baja a los
+       modales (onCreated/onInvited) no cambie en cada render del padre */
+    const reloadWorkspaces = useCallback(
+        () => {
+            sendRequest(
+                () => getAllWorkspacesWithMembers()
+            )
+        },
+        []
+    )
 
 
     return {

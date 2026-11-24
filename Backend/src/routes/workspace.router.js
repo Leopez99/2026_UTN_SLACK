@@ -25,9 +25,10 @@ workspace_router.get(
     getWorkspaces
 )
 
-/* 
+/*
 (Authentified) POST /api/workspace
-    Crear un nuevo espacio de trabajo con el nombre y la descripcion enviados en el body.
+    Crear un nuevo espacio de trabajo con el nombre, la descripcion y el logo
+    (opcional, data URL base64) enviados en el body.
     El usuario que lo crea queda automaticamente como miembro con rol 'owner'
 */
 workspace_router.post(
@@ -61,7 +62,8 @@ workspace_router.delete(
 
 /* 
 (owner, admin) PUT /api/workspace/:workspace_id
-    Actualizar el nombre y la descripcion del espacio de trabajo seleccionado (ambos campos son requeridos)
+    Actualizar el nombre y la descripcion del espacio de trabajo seleccionado (ambos campos son requeridos).
+    Acepta ademas un logo opcional (data URL base64): reemplaza el actual, y con null lo quita
 */
 workspace_router.put(
     '/:workspace_id',

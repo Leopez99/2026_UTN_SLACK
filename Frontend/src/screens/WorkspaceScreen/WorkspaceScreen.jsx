@@ -352,6 +352,7 @@ function WorkspaceScreen() {
 
       <ChannelSidebar
         workspace_name={workspace_selected.nombre}
+        workspace_logo={workspace_selected.logo ?? null}
         current_user={current_user}
         channel_groups={channel_groups}
         active_channel_id={active_channel?.canal_id ?? null}

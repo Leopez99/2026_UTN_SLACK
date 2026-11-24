@@ -1,6 +1,8 @@
 import { Link } from 'react-router'
 import Avatar from './Avatar'
 import { IconPlus } from './Icons'
+import workspace_default_logo from '../../../assets/Logos dislack/Logo dislack.png'
+import workspace_full_logo from '../../../assets/Logos dislack/Dislack logo completo.png'
 
 /*
 Rail izquierdo: espacios de trabajo del usuario, como los servidores de Discord.
@@ -11,7 +13,12 @@ function WorkspaceRail({ workspaces = [], active_workspace_id, onCreateWorkspace
     <nav className="ws-rail" aria-label="Espacios de trabajo">
 
       <Link className="ws-rail-item ws-rail-home" to="/" title="Mis espacios de trabajo">
-        <span className="ws-rail-home-mark" aria-hidden="true">S</span>
+        <img
+          className="ws-rail-home-logo"
+          src={workspace_full_logo}
+          alt="Dislack"
+          aria-hidden="true"
+        />
       </Link>
 
       <div className="ws-rail-separator" aria-hidden="true" />
@@ -35,6 +42,7 @@ function WorkspaceRail({ workspaces = [], active_workspace_id, onCreateWorkspace
                 <Avatar
                   className="ws-guild-avatar"
                   name={workspace.workspace_nombre}
+                  src={workspace.workspace_logo || workspace_default_logo}
                   size="rail"
                 />
                 <span className="ws-rail-pill" aria-hidden="true" />

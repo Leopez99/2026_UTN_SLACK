@@ -20,8 +20,18 @@ export async function getAllWorkspaces(){
     return response_body
 }
 
-export async function createWorkspace(name, description){
+export async function createWorkspace(name, description, logo){
     const auth_token = localStorage.getItem('auth_token')
+    const body = {
+        name: name,
+        description: description
+    }
+
+    /* El logo es opcional: solo se lo manda al backend cuando el usuario eligio una imagen */
+    if (logo) {
+        body.logo = logo
+    }
+
     const response_http = await fetch(
             API_URL + '/api/workspaces',
             {
@@ -30,10 +40,7 @@ export async function createWorkspace(name, description){
                     'Content-Type': 'application/json',
                     'Authorization': `bearer ${auth_token}`
                 },
-                body: JSON.stringify({
-                    name: name,
-                    description: description
-                })
+                body: JSON.stringify(body)
             }
         )
     const response_body = await response_http.json()

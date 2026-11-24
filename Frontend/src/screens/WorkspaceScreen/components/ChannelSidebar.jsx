@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Avatar from './Avatar'
+import workspace_default_logo from '../../../assets/Logos dislack/Logo dislack.png'
 import {
   IconChevronDown,
   IconClose,
@@ -20,6 +21,7 @@ tambien lo valida).
 */
 function ChannelSidebar({
   workspace_name = 'Espacio de trabajo',
+  workspace_logo = null,
   current_user,
   channel_groups = [],
   active_channel_id,
@@ -110,6 +112,14 @@ function ChannelSidebar({
     >
 
       <header className="ws-sidebar-header">
+        <img
+          className="ws-sidebar-logo"
+          src={workspace_logo || workspace_default_logo}
+          alt=""
+          aria-hidden="true"
+          title={workspace_name}
+        />
+
         <span className="ws-sidebar-title" title={workspace_name}>
           {workspace_name}
         </span>

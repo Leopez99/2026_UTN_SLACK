@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { deleteWorkspace } from '../../services/workspacesService'
 import { getInitials } from '../../utils/avatar.util'
-import workspace_logo from '../../assets/ava_0018-88.png'
+import workspace_logo from '../../assets/Logos dislack/Logo dislack.png'
 import arrow_icon from '../../assets/Arrow.png'
 import './WorkspaceList.css'
 
@@ -59,7 +59,7 @@ function WorkspaceRow({ workspace, onRequestDelete }) {
             >
                 <img
                     className="workspace-row-logo"
-                    src={workspace_logo}
+                    src={workspace.workspace_logo ?? workspace_logo}
                     alt=""
                 />
 

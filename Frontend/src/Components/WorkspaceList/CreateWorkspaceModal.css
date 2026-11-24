@@ -118,6 +118,106 @@
   font-size: 11px;
 }
 
+/* --- Eleccion de logo (opcional) --- */
+
+/* El input file real va oculto: se abre desde el boton circular */
+.create-workspace-logo-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  border: 0;
+  clip: rect(0, 0, 0, 0);
+  overflow: hidden;
+}
+
+.create-workspace-logo-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.create-workspace-logo-button {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 68px;
+  height: 68px;
+  padding: 0;
+  border: 2px dashed #e8e6ee;
+  border-radius: 50%;
+  background: #f6f5f9;
+  color: #9b98a1;
+  cursor: pointer;
+  overflow: hidden;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.create-workspace-logo-button:hover:not(:disabled) {
+  border-color: #611f69;
+  color: #611f69;
+}
+
+.create-workspace-logo-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.create-workspace-logo-button:focus-visible {
+  outline: 2px solid #611f69;
+  outline-offset: 2px;
+}
+
+/* Con imagen elegida el borde pasa a sólido */
+.create-workspace-logo-button:has(.create-workspace-logo-preview) {
+  border-style: solid;
+  border-color: #e8e6ee;
+}
+
+.create-workspace-logo-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.create-workspace-logo-help {
+  color: #616061;
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.create-workspace-logo-remove {
+  flex-shrink: 0;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #e01e5a;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.create-workspace-logo-remove:hover:not(:disabled) {
+  background: #fdeef2;
+}
+
+.create-workspace-logo-remove:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.create-workspace-logo-remove:focus-visible {
+  outline: 2px solid #611f69;
+  outline-offset: 2px;
+}
+
 .create-workspace-error {
   margin: 8px 0 4px;
   color: #e01e5a;

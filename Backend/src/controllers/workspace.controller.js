@@ -4,6 +4,7 @@ import channel_repository from "../repositories/channel.repository.js"
 import channel_message_repository from "../repositories/channelMessage.repository.js"
 import ServerError from "../utils/error.util.js"
 import { DEFAULT_CHANNEL_NAME, toChannelResponse } from "../utils/channel.util.js"
+import { validateWorkspaceLogo } from "../utils/logo.util.js"
 
 /*
 Los controllers son la capa HTTP de la API:
@@ -28,9 +29,18 @@ export async function getWorkspaces(request, response) {
 
 export async function createWorkspace(request, response) {
 
-    const { name, description } = request.body
+    const { name, description, logo } = request.body
 
-    const workspace_created = await workspace_repository.createWorkspace(name, description)
+    /*
+    El logo es opcional. Si viene, tiene que ser una data URL base64
+    valida (PNG, JPG o WebP) y no superar los 200 KB decodificados.
+    */
+    const logo_error_mensaje = validateWorkspaceLogo(logo)
+    if (logo_error_mensaje) {
+        throw new ServerError(logo_error_mensaje, 400)
+    }
+
+    const workspace_created = await workspace_repository.createWorkspace(name, description, logo ?? null)
 
     let owner_membership
     let default_channel
@@ -116,15 +126,32 @@ export async function deleteWorkspace(request, response) {
 export async function updateWorkspace(request, response) {
 
     const { workspace_id } = request.params
-    const { name, description } = request.body
+    const { name, description, logo } = request.body
 
     if (!name || !description) {
         throw new ServerError("name y description son campos requeridos", 400)
     }
 
+    /*
+    El logo se actualiza solo si se envia en el body:
+    - `logo: "data:image/..."` -> reemplaza el logo actual
+    - `logo: null`             -> quita el logo
+    - sin campo `logo`         -> conserva el logo actual
+    */
+    const logo_error_mensaje = validateWorkspaceLogo(logo)
+    if (logo_error_mensaje) {
+        throw new ServerError(logo_error_mensaje, 400)
+    }
+
+    const update_data = { nombre: name, description }
+
+    if (logo !== undefined) {
+        update_data.logo = logo ?? null
+    }
+
     const workspace_updated = await workspace_repository.updateById(
         workspace_id,
-        { nombre: name, description }
+        update_data
     )
 
     return response.status(200).send({

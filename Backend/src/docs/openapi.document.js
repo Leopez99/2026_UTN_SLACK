@@ -611,6 +611,7 @@ const openapi_document = {
                                         workspace_id: '6ab01f9a190ff6061955c88a',
                                         workspace_nombre: 'Equipo Backend',
                                         workspace_descripcion: 'Canal de trabajo del equipo de backend',
+                                        workspace_logo: null,
                                         workspace_fecha_creacion: '2026-09-17T14:56:26.249Z'
                                     }
                                 ]
@@ -632,7 +633,9 @@ const openapi_document = {
                     '',
                     'Además se crea automáticamente el canal `General` dentro del espacio. Si la creación de la membresía o del canal falla, el espacio se elimina para no quedar a medio armar.',
                     '',
-                    'No hay validación manual del body: se delega en el schema de Mongoose. Si falta `name`, supera los 30 caracteres o `description` supera los 1000, Mongoose lanza un `ValidationError` que la API responde como `500`.'
+                    '`logo` es opcional: una data URL base64 (`data:image/png|jpeg|webp;base64,...`) de hasta ~200 KB decodificados. Si viene inválido, la API responde `400`.',
+                    '',
+                    'No hay validación manual del resto del body: se delega en el schema de Mongoose. Si falta `name`, supera los 30 caracteres o `description` supera los 1000, Mongoose lanza un `ValidationError` que la API responde como `500`.'
                 ].join('\n'),
                 security: [{ bearerAuth: [] }],
                 requestBody: {
@@ -642,7 +645,8 @@ const openapi_document = {
                         {
                             example: {
                                 name: 'Equipo Backend',
-                                description: 'Canal de trabajo del equipo de backend'
+                                description: 'Canal de trabajo del equipo de backend',
+                                logo: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg...'
                             }
                         }
                     )
@@ -660,6 +664,7 @@ const openapi_document = {
                                     _id: '6ab01f9a190ff6061955c88a',
                                     nombre: 'Equipo Backend',
                                     description: 'Canal de trabajo del equipo de backend',
+                                    logo: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg...',
                                     fecha_creacion: '2026-09-17T14:56:26.249Z',
                                     __v: 0
                                 },
@@ -682,7 +687,15 @@ const openapi_document = {
                             }
                         }
                     ),
-                    400: AUTH_ERRORS[400],
+                    400: error_response(
+                        'Header de autenticación inválido, o `logo` inválido en el body.',
+                        [
+                            ['header_ausente', 400, 'Auth header is requered'],
+                            ['header_malformado', 400, 'Auth header is malformed'],
+                            ['logo_invalido', 400, 'logo debe ser una imagen en formato data URL base64 (PNG, JPG o WebP)'],
+                            ['logo_grande', 400, 'logo no puede superar los 200 KB']
+                        ]
+                    ),
                     401: AUTH_ERRORS[401],
                     500: INTERNAL_ERROR[500],
                     503: DATABASE_ERROR[503]
@@ -717,6 +730,7 @@ const openapi_document = {
                                     _id: '6ab01f9a190ff6061955c88a',
                                     nombre: 'Equipo Backend',
                                     description: 'Canal de trabajo del equipo de backend',
+                                    logo: null,
                                     fecha_creacion: '2026-09-17T14:56:26.249Z',
                                     __v: 0
                                 },
@@ -762,6 +776,8 @@ const openapi_document = {
                     '',
                     '`name` y `description` son obligatorios (ambos). Solo puede hacerlo un miembro con rol `owner` o `admin`.',
                     '',
+                    '`logo` es opcional: si se envía reemplaza el logo actual (data URL base64, máx. ~200 KB), con `null` se quita, y si no se envía se conserva.',
+                    '',
                     '**Ojo:** el repositorio actual no retorna el documento actualizado, por lo que la respuesta devuelve `data: {}` (sin `workspace_updated`).'
                 ].join('\n'),
                 security: [{ bearerAuth: [] }],
@@ -775,7 +791,8 @@ const openapi_document = {
                         {
                             example: {
                                 name: 'Equipo Backend UTN',
-                                description: 'Nueva descripción del espacio'
+                                description: 'Nueva descripción del espacio',
+                                logo: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg...'
                             }
                         }
                     )
@@ -792,11 +809,13 @@ const openapi_document = {
                         }
                     ),
                     400: error_response(
-                        'Header de autenticación inválido, o falta `name`/`description` en el body.',
+                        'Header de autenticación inválido, falta `name`/`description` en el body, o `logo` inválido.',
                         [
                             ['header_ausente', 400, 'Auth header is requered'],
                             ['header_malformado', 400, 'Auth header is malformed'],
-                            ['campos_requeridos', 400, 'name y description son campos requeridos']
+                            ['campos_requeridos', 400, 'name y description son campos requeridos'],
+                            ['logo_invalido', 400, 'logo debe ser una imagen en formato data URL base64 (PNG, JPG o WebP)'],
+                            ['logo_grande', 400, 'logo no puede superar los 200 KB']
                         ]
                     ),
                     401: AUTH_ERRORS[401],
@@ -1385,6 +1404,15 @@ const openapi_document = {
                         maxLength: 1000,
                         description: 'Descripción opcional del workspace.',
                         example: 'Canal de trabajo del equipo de backend'
+                    },
+                    logo: {
+                        type: 'string',
+                        description: [
+                            'Logo opcional del workspace como data URL base64: `data:image/png;base64,<datos>`.',
+                            'Tipos aceptados: PNG (`data:image/png`), JPG (`data:image/jpeg`) y WebP (`data:image/webp`).',
+                            'Máximo ~200 KB una vez decodificados los datos base64. Sin logo, omitir el campo o enviar `null`.'
+                        ].join('\n'),
+                        example: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg...'
                     }
                 }
             },
@@ -1392,7 +1420,11 @@ const openapi_document = {
             UpdateWorkspaceRequest: {
                 type: 'object',
                 required: ['name', 'description'],
-                description: 'Ambos campos son obligatorios: el controller responde `400` si falta cualquiera de los dos.',
+                description: [
+                    '`name` y `description` son obligatorios (ambos). El controller responde `400` si falta cualquiera de los dos.',
+                    '',
+                    '`logo` es opcional: si se envía reemplaza el logo actual, con `null` se quita, y si no se envía se conserva.'
+                ].join('\n'),
                 properties: {
                     name: {
                         type: 'string',
@@ -1403,6 +1435,15 @@ const openapi_document = {
                         type: 'string',
                         maxLength: 1000,
                         example: 'Nueva descripción del espacio'
+                    },
+                    logo: {
+                        type: 'string',
+                        nullable: true,
+                        description: [
+                            'Logo opcional como data URL base64 (`data:image/png|jpeg|webp;base64,...`, máx. ~200 KB decodificados).',
+                            'Con `null` se elimina el logo actual; si se omite el campo, el logo se conserva.'
+                        ].join('\n'),
+                        example: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg...'
                     }
                 }
             },
@@ -1513,6 +1554,12 @@ const openapi_document = {
                         type: 'string',
                         maxLength: 1000,
                         example: 'Canal de trabajo del equipo de backend'
+                    },
+                    logo: {
+                        type: 'string',
+                        nullable: true,
+                        description: 'Logo del workspace como data URL base64. `null` cuando el workspace no tiene logo.',
+                        example: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg...'
                     },
                     fecha_creacion: {
                         type: 'string',
@@ -1668,6 +1715,12 @@ const openapi_document = {
                         type: 'string',
                         description: 'Descripción del workspace. Puede no estar presente si el workspace no tiene descripción.',
                         example: 'Canal de trabajo del equipo de backend'
+                    },
+                    workspace_logo: {
+                        type: 'string',
+                        nullable: true,
+                        description: 'Logo del workspace como data URL base64. `null` cuando el workspace no tiene logo (el frontend muestra su logo por defecto).',
+                        example: null
                     },
                     workspace_fecha_creacion: {
                         type: 'string',

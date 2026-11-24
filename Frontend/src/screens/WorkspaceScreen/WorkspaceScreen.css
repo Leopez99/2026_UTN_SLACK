@@ -115,20 +115,19 @@ body.ws-scroll-locked {
 
 .ws-rail-home {
   border-radius: 16px;
-  background: var(--ws-accent);
-  color: #fff;
+  background: #fff;
 }
 
 .ws-rail-home:hover {
   border-radius: 12px;
-  background: var(--ws-accent-hover);
+  background: #e3e5e8;
 }
 
-.ws-rail-home-mark {
-  font-size: 21px;
-  font-weight: 900;
-  letter-spacing: -0.5px;
-  line-height: 1;
+/* Logo completo de dislack en el boton de home del rail */
+.ws-rail-home-logo {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
 }
 
 .ws-rail-separator {
@@ -208,6 +207,14 @@ body.ws-scroll-locked {
   padding: 0 8px 0 16px;
   border-bottom: 1px solid rgba(0, 0, 0, 0.2);
   box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
+}
+
+.ws-sidebar-logo {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border-radius: 8px;
+  object-fit: cover;
 }
 
 .ws-sidebar-title {
@@ -1045,6 +1052,16 @@ body.ws-scroll-locked {
   letter-spacing: 0.2px;
   line-height: 1;
   user-select: none;
+}
+
+/* Imagen dentro del avatar (logo del espacio): cubre todo el recuadro y
+   sigue el border-radius del avatar (tambien cuando el rail lo redondea) */
+.ws-avatar-img {
+  grid-area: 1 / 1;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
 }
 
 .ws-avatar--rail {
