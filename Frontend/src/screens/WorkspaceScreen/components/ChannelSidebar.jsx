@@ -5,9 +5,11 @@ import {
   IconChevronDown,
   IconClose,
   IconHash,
+  IconPencil,
   IconPlus,
   IconSettings,
-  IconTrash
+  IconTrash,
+  IconUserPlus
 } from './Icons'
 
 /*
@@ -28,13 +30,16 @@ function ChannelSidebar({
   channels_loading = false,
   channels_error = null,
   can_manage_channels = false,
+  can_edit_workspace = false,
   is_open = false,
   on_close,
   on_resize_start,
   on_select_channel,
   on_reload_channels,
   on_create_channel,
-  on_request_delete_channel
+  on_request_delete_channel,
+  on_request_edit_workspace,
+  on_request_invite
 }) {
   const user_name = current_user?.name || 'Mi cuenta'
 
@@ -125,7 +130,29 @@ function ChannelSidebar({
           {workspace_name}
         </span>
 
-        <IconChevronDown size={18} className="ws-sidebar-chevron" />
+        {can_edit_workspace && (
+          <button
+            type="button"
+            className="ws-icon-button ws-sidebar-edit"
+            title="Editar espacio de trabajo"
+            aria-label={`Editar ${workspace_name}`}
+            onClick={on_request_edit_workspace}
+          >
+            <IconPencil size={16} />
+          </button>
+        )}
+
+        {on_request_invite && (
+          <button
+            type="button"
+            className="ws-icon-button ws-sidebar-invite"
+            title="Invitar personas"
+            aria-label={`Invitar a alguien a ${workspace_name}`}
+            onClick={on_request_invite}
+          >
+            <IconUserPlus size={18} />
+          </button>
+        )}
 
         <div className="ws-sidebar-actions">
           {can_manage_channels && (

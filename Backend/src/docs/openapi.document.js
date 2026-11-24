@@ -774,7 +774,7 @@ const openapi_document = {
                 description: [
                     'Actualiza el nombre y la descripción del workspace.',
                     '',
-                    '`name` y `description` son obligatorios (ambos). Solo puede hacerlo un miembro con rol `owner` o `admin`.',
+                    '`name` es obligatorio. `description` es opcional: si no se envía (o llega vacía) se guarda como cadena vacía. Solo puede hacerlo un miembro con rol `owner` o `admin`.',
                     '',
                     '`logo` es opcional: si se envía reemplaza el logo actual (data URL base64, máx. ~200 KB), con `null` se quita, y si no se envía se conserva.',
                     '',
@@ -809,11 +809,11 @@ const openapi_document = {
                         }
                     ),
                     400: error_response(
-                        'Header de autenticación inválido, falta `name`/`description` en el body, o `logo` inválido.',
+                        'Header de autenticación inválido, falta `name` en el body, o `logo` inválido.',
                         [
                             ['header_ausente', 400, 'Auth header is requered'],
                             ['header_malformado', 400, 'Auth header is malformed'],
-                            ['campos_requeridos', 400, 'name y description son campos requeridos'],
+                            ['campos_requeridos', 400, 'name es un campo requerido'],
                             ['logo_invalido', 400, 'logo debe ser una imagen en formato data URL base64 (PNG, JPG o WebP)'],
                             ['logo_grande', 400, 'logo no puede superar los 200 KB']
                         ]
@@ -935,6 +935,63 @@ const openapi_document = {
                         'No existe un workspace con ese id.',
                         [
                             ['workspace_no_encontrado', 404, 'Workspace no encontrado']
+                        ]
+                    ),
+                    500: INTERNAL_ERROR[500],
+                    503: DATABASE_ERROR[503]
+                }
+            }
+        },
+
+        '/api/workspaces/{workspace_id}/members/{member_id}': {
+            delete: {
+                tags: ['Workspaces'],
+                summary: 'Eliminar un miembro de un espacio de trabajo',
+                operationId: 'removeWorkspaceMember',
+                description: [
+                    'Elimina la membresía indicada del workspace.',
+                    '',
+                    'Solo puede hacerlo un miembro con rol `owner` o `admin`. El owner del workspace no puede ser eliminado, nadie puede eliminar su propia membresía y un `admin` solo puede eliminar usuarios comunes (no a otros `admin`).'
+                ].join('\n'),
+                security: [{ bearerAuth: [] }],
+                parameters: [
+                    { $ref: '#/components/parameters/WorkspaceId' },
+                    { $ref: '#/components/parameters/MemberId' }
+                ],
+                responses: {
+                    200: success_response(
+                        'Membresía eliminada del workspace.',
+                        { $ref: '#/components/schemas/DeleteWorkspaceMemberResponse' },
+                        {
+                            ok: true,
+                            status: 200,
+                            message: 'Miembro eliminado correctamente',
+                            data: {
+                                member_deleted: {
+                                    member_id: '6ab01f9a190ff6061955c890',
+                                    member_rol: 'user',
+                                    usuario_id: '6aabff9a190ff6061955c889'
+                                }
+                            }
+                        }
+                    ),
+                    400: AUTH_ERRORS[400],
+                    401: AUTH_ERRORS[401],
+                    403: error_response(
+                        'El usuario no es miembro del workspace, su rol no es `owner`/`admin`, o la operación viola las reglas de eliminación.',
+                        [
+                            ['no_miembro', 403, 'No eres miembro de este espacio de trabajo'],
+                            ['sin_permisos', 403, 'No tienes permisos suficientes para hacer esta operacion'],
+                            ['propia_membresia', 403, 'No podes eliminar tu propia membresia'],
+                            ['owner_protegido', 403, 'No se puede eliminar al owner del espacio de trabajo'],
+                            ['admin_protegido', 403, 'Un admin no puede eliminar a otro admin']
+                        ]
+                    ),
+                    404: error_response(
+                        'No existe el workspace o la membresía no pertenece a ese workspace.',
+                        [
+                            ['workspace_no_encontrado', 404, 'Workspace no encontrado'],
+                            ['miembro_no_encontrado', 404, 'Miembro no encontrado en este espacio de trabajo']
                         ]
                     ),
                     500: INTERNAL_ERROR[500],
@@ -1309,6 +1366,17 @@ const openapi_document = {
                     pattern: '^[a-fA-F0-9]{24}$'
                 },
                 example: '6ab01f9a190ff6061955c8a1'
+            },
+            MemberId: {
+                name: 'member_id',
+                in: 'path',
+                required: true,
+                description: 'ObjectId de MongoDB de la membresía (24 caracteres hexadecimales). Debe pertenecer al workspace indicado.',
+                schema: {
+                    type: 'string',
+                    pattern: '^[a-fA-F0-9]{24}$'
+                },
+                example: '6ab01f9a190ff6061955c890'
             }
         },
 
@@ -1419,9 +1487,11 @@ const openapi_document = {
 
             UpdateWorkspaceRequest: {
                 type: 'object',
-                required: ['name', 'description'],
+                required: ['name'],
                 description: [
-                    '`name` y `description` son obligatorios (ambos). El controller responde `400` si falta cualquiera de los dos.',
+                    '`name` es obligatorio; el controller responde `400` si falta.',
+                    '',
+                    '`description` es opcional: si no se envía se guarda como cadena vacía.',
                     '',
                     '`logo` es opcional: si se envía reemplaza el logo actual, con `null` se quita, y si no se envía se conserva.'
                 ].join('\n'),
@@ -1434,6 +1504,7 @@ const openapi_document = {
                     description: {
                         type: 'string',
                         maxLength: 1000,
+                        description: 'Descripción opcional del espacio. Si no se envía, queda vacía.',
                         example: 'Nueva descripción del espacio'
                     },
                     logo: {
@@ -2245,6 +2316,52 @@ const openapi_document = {
                             members: {
                                 type: 'array',
                                 items: { $ref: '#/components/schemas/WorkspaceMember' }
+                            }
+                        }
+                    }
+                }
+            },
+
+            DeleteWorkspaceMemberResponse: {
+                type: 'object',
+                required: ['ok', 'status', 'message', 'data'],
+                properties: {
+                    ok: {
+                        type: 'boolean',
+                        example: true
+                    },
+                    status: {
+                        type: 'integer',
+                        example: 200
+                    },
+                    message: {
+                        type: 'string',
+                        example: 'Miembro eliminado correctamente'
+                    },
+                    data: {
+                        type: 'object',
+                        required: ['member_deleted'],
+                        properties: {
+                            member_deleted: {
+                                type: 'object',
+                                required: ['member_id', 'member_rol', 'usuario_id'],
+                                properties: {
+                                    member_id: {
+                                        type: 'string',
+                                        description: 'ObjectId de la membresía eliminada.',
+                                        example: '6ab01f9a190ff6061955c890'
+                                    },
+                                    member_rol: {
+                                        type: 'string',
+                                        enum: ['user', 'admin', 'owner'],
+                                        example: 'user'
+                                    },
+                                    usuario_id: {
+                                        type: 'string',
+                                        description: 'ObjectId del usuario cuya membresía se eliminó.',
+                                        example: '6aabff9a190ff6061955c889'
+                                    }
+                                }
                             }
                         }
                     }

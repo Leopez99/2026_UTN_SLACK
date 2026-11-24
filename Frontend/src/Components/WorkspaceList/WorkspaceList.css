@@ -213,6 +213,7 @@
 .workspace-row-actions {
   display: flex;
   align-items: center;
+  gap: 4px;
   flex: 0 0 auto;
   width: 0;
   margin-right: 0;
@@ -223,15 +224,22 @@
   transition: width 0.18s ease, margin-right 0.18s ease, opacity 0.18s ease;
 }
 
-/* Al hover de la fila (o al enfocar el boton con teclado) se despliega la franja */
+/* Al hover de la fila (o al enfocar un boton con teclado) se despliega la franja */
 .workspace-row:hover .workspace-row-actions,
 .workspace-row-actions:focus-within {
-  width: 38px;
+  width: 76px;
   margin-right: 6px;
   opacity: 1;
   pointer-events: auto;
 }
 
+/* Admin sin permiso de borrado: la franja solo tiene el lapiz */
+.workspace-row:hover .workspace-row-actions-single,
+.workspace-row-actions-single:focus-within {
+  width: 38px;
+}
+
+.workspace-row-edit,
 .workspace-row-delete {
   display: grid;
   place-items: center;
@@ -242,9 +250,26 @@
   border: none;
   border-radius: 8px;
   background: transparent;
-  color: #e01e5a;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
+}
+
+.workspace-row-edit {
+  color: #611f69;
+}
+
+.workspace-row-edit:hover {
+  background: #ede2ee;
+  color: #4a154b;
+}
+
+.workspace-row-edit:focus-visible {
+  outline: 2px solid #611f69;
+  outline-offset: 1px;
+}
+
+.workspace-row-delete {
+  color: #e01e5a;
 }
 
 .workspace-row-delete:hover {
@@ -453,13 +478,18 @@
     padding-left: 4px;
   }
 
-  /* En pantallas tactiles no hay hover: la franja de eliminar queda visible */
+  /* En pantallas tactiles no hay hover: la franja de acciones queda visible */
   .workspace-row-actions {
-    width: 34px;
+    width: 70px;
     margin-right: 2px;
     opacity: 1;
     pointer-events: auto;
     transition: none;
+  }
+
+  /* Admin sin permiso de borrado: solo el lapiz */
+  .workspace-row-actions-single {
+    width: 34px;
   }
 
   .workspace-confirm-card {

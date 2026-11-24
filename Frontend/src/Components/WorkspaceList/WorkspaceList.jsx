@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { deleteWorkspace } from '../../services/workspacesService'
 import { getInitials } from '../../utils/avatar.util'
+import EditWorkspaceModal from './EditWorkspaceModal'
 import workspace_logo from '../../assets/Logos dislack/Logo dislack.png'
 import arrow_icon from '../../assets/Arrow.png'
 import './WorkspaceList.css'
@@ -12,25 +13,28 @@ const AVATAR_COLORS = ['#e8912d', '#2bac76', '#36c5f0', '#e01e5a', '#611f69', '#
 const MAX_VISIBLE_MEMBERS = 4
 
 /* Fila de un espacio de trabajo dentro de la tarjeta */
-function WorkspaceRow({ workspace, onRequestDelete }) {
+function WorkspaceRow({ workspace, onRequestEdit, onRequestDelete }) {
     const members = workspace.members ?? []
     const members_count = members.length
 
     /* Solo el owner puede eliminar el espacio de trabajo (lo valida el backend) */
     const is_owner = workspace.member_rol === 'owner'
 
+    /* Owner y admin pueden editar el espacio (lo valida el backend) */
+    const can_edit = is_owner || workspace.member_rol === 'admin'
+
     return (
         <div className="workspace-row">
 
-            {/* Franja con el tacho: a la izquierda del enlace, se revela al hover (solo owner) */}
-            {is_owner && (
-                <div className="workspace-row-actions">
+            {/* Franja con lapiz y tacho: a la izquierda del enlace, se revela al hover */}
+            {can_edit && (
+                <div className={`workspace-row-actions${is_owner ? '' : ' workspace-row-actions-single'}`}>
                     <button
                         type="button"
-                        className="workspace-row-delete"
-                        aria-label={`Eliminar ${workspace.workspace_nombre}`}
-                        title="Eliminar espacio de trabajo"
-                        onClick={() => onRequestDelete(workspace)}
+                        className="workspace-row-edit"
+                        aria-label={`Editar ${workspace.workspace_nombre}`}
+                        title="Editar espacio de trabajo"
+                        onClick={() => onRequestEdit(workspace)}
                     >
                         <svg
                             viewBox="0 0 24 24"
@@ -43,13 +47,38 @@ function WorkspaceRow({ workspace, onRequestDelete }) {
                             strokeLinejoin="round"
                             aria-hidden="true"
                         >
-                            <path d="M3 6h18" />
-                            <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
-                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-                            <path d="M10 11v6" />
-                            <path d="M14 11v6" />
+                            <path d="M12 20h9" />
+                            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
                         </svg>
                     </button>
+
+                    {is_owner && (
+                        <button
+                            type="button"
+                            className="workspace-row-delete"
+                            aria-label={`Eliminar ${workspace.workspace_nombre}`}
+                            title="Eliminar espacio de trabajo"
+                            onClick={() => onRequestDelete(workspace)}
+                        >
+                            <svg
+                                viewBox="0 0 24 24"
+                                width="20"
+                                height="20"
+                                fill="none"
+                                stroke="currentColor"
+                                strokeWidth="1.8"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                aria-hidden="true"
+                            >
+                                <path d="M3 6h18" />
+                                <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                                <path d="M10 11v6" />
+                                <path d="M14 11v6" />
+                            </svg>
+                        </button>
+                    )}
                 </div>
             )}
 
@@ -124,6 +153,17 @@ export default function WorkspaceList({
     const [workspace_to_delete, setWorkspaceToDelete] = useState(null)
     const [delete_loading, setDeleteLoading] = useState(false)
     const [delete_error, setDeleteError] = useState(null)
+
+    /* Workspace abierto en el modal de edicion (datos + miembros) */
+    const [workspace_to_edit, setWorkspaceToEdit] = useState(null)
+
+    function requestEdit(workspace) {
+        setWorkspaceToEdit(workspace)
+    }
+
+    function cancelEdit() {
+        setWorkspaceToEdit(null)
+    }
 
     function requestDelete(workspace) {
         setDeleteError(null)
@@ -208,6 +248,7 @@ export default function WorkspaceList({
                 <WorkspaceRow
                     key={workspace.workspace_id}
                     workspace={workspace}
+                    onRequestEdit={requestEdit}
                     onRequestDelete={requestDelete}
                 />
             ))}
@@ -248,6 +289,14 @@ export default function WorkspaceList({
                 </footer>
 
             </section>
+
+            {workspace_to_edit && (
+                <EditWorkspaceModal
+                    workspace={workspace_to_edit}
+                    onClose={cancelEdit}
+                    onSaved={onReload}
+                />
+            )}
 
             {workspace_to_delete && (
                 <div

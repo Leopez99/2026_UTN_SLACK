@@ -10,6 +10,10 @@ class MemberRepository {
         })
     }
 
+    async getById(memberId) {
+        return await Member.findById(memberId)
+    }
+
     async deleteById(memberId) {
         await Member.findByIdAndDelete(memberId)
     }

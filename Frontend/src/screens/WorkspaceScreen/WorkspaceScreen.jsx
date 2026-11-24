@@ -12,6 +12,8 @@ import ChannelSidebar from './components/ChannelSidebar'
 import ChatArea from './components/ChatArea'
 import MembersPanel from './components/MembersPanel'
 import CreateWorkspaceModal from '../../Components/WorkspaceList/CreateWorkspaceModal'
+import EditWorkspaceModal from '../../Components/WorkspaceList/EditWorkspaceModal'
+import InviteUserModal from '../../Components/WorkspaceList/InviteUserModal'
 import './WorkspaceScreen.css'
 
 /*
@@ -96,6 +98,18 @@ function WorkspaceScreen() {
 
   // Modal de creacion de espacio de trabajo (lo dispara el "+" del rail)
   const [create_workspace_open, set_create_workspace_open] = useState(false)
+
+  // Modal de edicion del espacio activo (lo dispara el lapiz del header del sidebar)
+  const [edit_workspace_open, set_edit_workspace_open] = useState(false)
+
+  // Modal de invitacion (lo dispara el boton de persona con "+" del sidebar)
+  const [workspace_invite_open, set_workspace_invite_open] = useState(false)
+
+  // Marca si el modal de edicion cambio algo, para recargar la pantalla al cerrarlo
+  const workspace_edit_changed_ref = useRef(false)
+
+  // Marca si se elimino (o invito) a alguien desde el panel/miembros del sidebar
+  const workspace_members_changed_ref = useRef(false)
 
   // La pantalla ocupa todo el viewport: el documento no debe scrollear.
   useEffect(() => {
@@ -189,6 +203,20 @@ function WorkspaceScreen() {
     window.addEventListener('keydown', handle_key_down)
 
     return () => window.removeEventListener('keydown', handle_key_down)
+  }, [open_panel])
+
+  // Al cerrar el panel de miembros: si se elimino a alguien, se recarga la
+  // pantalla para traer la lista actualizada del backend.
+  useEffect(() => {
+    if (open_panel || !workspace_members_changed_ref.current) {
+      return undefined
+    }
+
+    workspace_members_changed_ref.current = false
+    reloadScreen()
+
+    return undefined
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open_panel])
 
   useEffect(() => {
@@ -350,6 +378,41 @@ function WorkspaceScreen() {
     set_channel_to_delete(channel)
   }
 
+  /* El modal de edicion avisa cuando guardo o elimino un miembro: se recarga
+     la pantalla al cerrarlo (recargarla antes lo desmontaria por el estado de carga) */
+  function handleWorkspaceEditSaved() {
+    workspace_edit_changed_ref.current = true
+  }
+
+  function handleCloseEditWorkspace() {
+    set_edit_workspace_open(false)
+
+    if (workspace_edit_changed_ref.current) {
+      workspace_edit_changed_ref.current = false
+      reloadScreen()
+    }
+  }
+
+  /* Invitaciones: el modal se cierra solo y al salir de los paneles/modales
+     se recarga la pantalla si cambio la cantidad de miembros */
+
+  function handleRequestWorkspaceInvite() {
+    set_workspace_invite_open(true)
+  }
+
+  function handleWorkspaceInviteDone() {
+    set_workspace_invite_open(false)
+
+    if (workspace_members_changed_ref.current) {
+      workspace_members_changed_ref.current = false
+      reloadScreen()
+    }
+  }
+
+  function handleWorkspaceMemberRemoved() {
+    workspace_members_changed_ref.current = true
+  }
+
   function handleCancelDeleteChannel() {
     if (delete_loading) {
       return
@@ -421,6 +484,20 @@ function WorkspaceScreen() {
     )
   }
 
+  /*
+  El modal de edicion espera el mismo formato que la lista del Home:
+  datos del workspace + rol del usuario + miembros. Se arma con el workspace
+  activo (documento crudo de la API) y los miembros que ya trae la pantalla.
+  */
+  const workspace_for_edit = {
+    workspace_id: workspace_selected._id,
+    workspace_nombre: workspace_selected.nombre,
+    workspace_descripcion: workspace_selected.description,
+    workspace_logo: workspace_selected.logo ?? null,
+    member_rol: current_role,
+    members
+  }
+
   return (
     <div className="workspace-screen" ref={screen_ref}>
 
@@ -439,6 +516,7 @@ function WorkspaceScreen() {
         channels_loading={channels_loading}
         channels_error={channels_error}
         can_manage_channels={can_manage_channels}
+        can_edit_workspace={can_manage_channels}
         is_open={open_panel === 'canales'}
         on_close={close_panel}
         on_resize_start={handleSidebarResizeStart}
@@ -446,6 +524,8 @@ function WorkspaceScreen() {
         on_reload_channels={reloadChannels}
         on_create_channel={handleCreateChannel}
         on_request_delete_channel={handleRequestDeleteChannel}
+        on_request_edit_workspace={() => set_edit_workspace_open(true)}
+        on_request_invite={handleRequestWorkspaceInvite}
       />
 
       <ChatArea
@@ -466,8 +546,12 @@ function WorkspaceScreen() {
 
       <MembersPanel
         members={members}
+        workspace_id={workspace_id}
+        current_user_id={current_user?.id}
+        can_remove_members={can_manage_channels}
         is_open={open_panel === 'miembros'}
         on_close={close_panel}
+        on_removed={handleWorkspaceMemberRemoved}
       />
 
       {open_panel && (
@@ -522,10 +606,27 @@ function WorkspaceScreen() {
         </div>
       )}
 
+      {edit_workspace_open && (
+        <EditWorkspaceModal
+          workspace={workspace_for_edit}
+          onClose={handleCloseEditWorkspace}
+          onSaved={handleWorkspaceEditSaved}
+        />
+      )}
+
       {create_workspace_open && (
         <CreateWorkspaceModal
           onClose={() => set_create_workspace_open(false)}
           onCreated={reloadScreen}
+        />
+      )}
+
+      {workspace_invite_open && (
+        <InviteUserModal
+          workspaces={workspaces}
+          initial_workspace_id={String(workspace_id)}
+          onClose={handleWorkspaceInviteDone}
+          onInvited={handleWorkspaceMemberRemoved}
         />
       )}
 

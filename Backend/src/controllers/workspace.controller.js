@@ -128,8 +128,8 @@ export async function updateWorkspace(request, response) {
     const { workspace_id } = request.params
     const { name, description, logo } = request.body
 
-    if (!name || !description) {
-        throw new ServerError("name y description son campos requeridos", 400)
+    if (!name) {
+        throw new ServerError("name es un campo requerido", 400)
     }
 
     /*
@@ -143,7 +143,7 @@ export async function updateWorkspace(request, response) {
         throw new ServerError(logo_error_mensaje, 400)
     }
 
-    const update_data = { nombre: name, description }
+    const update_data = { nombre: name, description: description ?? '' }
 
     if (logo !== undefined) {
         update_data.logo = logo ?? null
@@ -160,6 +160,52 @@ export async function updateWorkspace(request, response) {
         status: 200,
         data: {
             workspace_updated
+        }
+    })
+}
+
+
+export async function removeMember(request, response) {
+
+    const { member_id } = request.params
+
+    const member = await member_repository.getById(member_id)
+
+    /*
+    La membresia tiene que existir y pertenecer al workspace de la ruta.
+    Si no, se responde 404 para no exponer membresias de otros espacios.
+    */
+    if (!member || String(member.fk_id_espacio_trabajo) !== String(request.workspace._id)) {
+        throw new ServerError("Miembro no encontrado en este espacio de trabajo", 404)
+    }
+
+    /* Nadie se elimina a si mismo desde este endpoint */
+    if (String(member.fk_id_usuario) === String(request.user.id)) {
+        throw new ServerError("No podes eliminar tu propia membresia", 403)
+    }
+
+    /* El owner del espacio de trabajo no puede ser expulsado */
+    if (member.rol === 'owner') {
+        throw new ServerError("No se puede eliminar al owner del espacio de trabajo", 403)
+    }
+
+    /* Un admin solo puede expulsar usuarios comunes, no a otros admins */
+    if (request.membership.rol === 'admin' && member.rol === 'admin') {
+        throw new ServerError("Un admin no puede eliminar a otro admin", 403)
+    }
+
+    await member_repository.deleteById(member_id)
+
+    return response.status(200).send({
+        ok: true,
+        message: "Miembro eliminado correctamente",
+        status: 200,
+        data: {
+            member_deleted: {
+                member_id: member._id,
+                member_rol: member.rol,
+                usuario_id: member.fk_id_usuario
+            }
         }
     })
 }

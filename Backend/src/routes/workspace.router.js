@@ -5,6 +5,7 @@ import {
     getWorkspaceById,
     getWorkspaceMembers,
     getWorkspaces,
+    removeMember,
     updateWorkspace
 } from '../controllers/workspace.controller.js'
 import authMiddleware from '../middlewares/auth.middleware.js'
@@ -62,7 +63,7 @@ workspace_router.delete(
 
 /* 
 (owner, admin) PUT /api/workspace/:workspace_id
-    Actualizar el nombre y la descripcion del espacio de trabajo seleccionado (ambos campos son requeridos).
+    Actualizar el nombre (requerido) y la descripcion (opcional) del espacio de trabajo seleccionado.
     Acepta ademas un logo opcional (data URL base64): reemplaza el actual, y con null lo quita
 */
 workspace_router.put(
@@ -81,6 +82,19 @@ workspace_router.get(
     authMiddleware,
     workspaceMiddleware([]),   // [] = cualquier miembro puede verla
     getWorkspaceMembers
+)
+
+/* 
+(owner, admin) DELETE /api/workspace/:workspace_id/members/:member_id
+    Eliminar la membresia de un miembro del espacio de trabajo.
+    El owner no puede ser eliminado, nadie puede eliminar su propia membresia
+    y un admin solo puede eliminar usuarios comunes (no a otros admins)
+*/
+workspace_router.delete(
+    '/:workspace_id/members/:member_id',
+    authMiddleware,
+    workspaceMiddleware(['owner', 'admin']),
+    removeMember
 )
 
 /* 

@@ -8,14 +8,15 @@ const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 /*
 Modal para invitar a un usuario a un espacio de trabajo desde el HomeScreen:
-- Select del espacio de trabajo al que invitar
+- Select del espacio de trabajo al que invitar (opcionalmente preseleccionado
+  con initial_workspace_id, lo usa el WorkspaceScreen)
 - Input de email (tiene que ser de un usuario registrado)
 - Select del canal al que se invita (los canales cargan al elegir el espacio)
 Cualquier miembro puede invitar, sin importar su rol.
 */
-function InviteUserModal({ workspaces, onClose, onInvited }) {
+function InviteUserModal({ workspaces, onClose, onInvited, initial_workspace_id = '' }) {
 
-    const [workspace_id, setWorkspaceId] = useState('')
+    const [workspace_id, setWorkspaceId] = useState(initial_workspace_id)
 
     const [email, setEmail] = useState('')
     const [email_error, setEmailError] = useState(null)

@@ -39,6 +39,15 @@ export function IconChevronDown(props) {
   )
 }
 
+export function IconPencil(props) {
+  return (
+    <IconBase {...props}>
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </IconBase>
+  )
+}
+
 export function IconMenu(props) {
   return (
     <IconBase {...props}>
@@ -62,6 +71,17 @@ export function IconUsers(props) {
       <circle cx="9" cy="7" r="4" />
       <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
       <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+    </IconBase>
+  )
+}
+
+/* Persona con (+): el mismo dibujo que el boton de invitar del HomeScreen */
+export function IconUserPlus(props) {
+  return (
+    <IconBase {...props}>
+      <circle cx="9.5" cy="8" r="3.5" />
+      <path d="M3 20c0-3.6 2.9-6.5 6.5-6.5S16 16.4 16 20" />
+      <path d="M18.5 7.5v6M15.5 10.5h6" />
     </IconBase>
   )
 }
