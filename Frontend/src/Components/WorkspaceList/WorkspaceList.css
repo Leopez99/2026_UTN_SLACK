@@ -39,6 +39,41 @@
   font-weight: 500;
 }
 
+/* --- Footer con acciones (estilo referencia) --- */
+
+.workspace-card-footer {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 20px 18px;
+  border-top: 1px solid #e8e6ee;
+}
+
+.workspace-card-footer-help {
+  margin: 0;
+  color: #1d1c1d;
+  font-size: 13.5px;
+  line-height: 1.5;
+}
+
+.workspace-card-footer-link {
+  color: #1264a3;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-decoration: none;
+}
+
+.workspace-card-footer-link:hover {
+  text-decoration: underline;
+}
+
+.workspace-card-footer-link:focus-visible {
+  outline: 2px solid #1264a3;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 .workspace-row-list {
   display: flex;
   flex-direction: column;
@@ -152,96 +187,46 @@
 }
 
 .workspace-row-arrow {
+  flex: 0 0 auto;
+  width: 27px;
+  height: 27px;
+  object-fit: contain;
   margin-left: auto;
   padding-left: 12px;
-  color: #1d1c1d;
-  font-size: 20px;
-  line-height: 1;
+  transition: transform 0.15s ease;
 }
 
-/* --- Menu de acciones (solo visible para el owner) --- */
-
-.workspace-row-menu {
-  position: relative;
-  flex: 0 0 auto;
-  margin-right: 6px;
+.workspace-row:hover .workspace-row-arrow {
+  transform: translateX(3px);
 }
 
-.workspace-row-menu-trigger {
+/* --- Icono de eliminar (solo visible para el owner) --- */
+
+.workspace-row-delete {
   display: grid;
   place-items: center;
-  width: 28px;
-  height: 28px;
+  flex: 0 0 auto;
+  width: 34px;
+  height: 34px;
+  margin-left: 6px;
+  margin-right: 6px;
   padding: 0;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   background: transparent;
-  color: #616061;
-  font-family: inherit;
-  font-size: 18px;
-  font-weight: 700;
-  line-height: 1;
+  color: #e01e5a;
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
 }
 
-.workspace-row-menu-trigger:hover,
-.workspace-row-menu-trigger-open {
-  background: #e8e6ee;
-  color: #1d1c1d;
+.workspace-row-delete:hover {
+  background: #fdecef;
+  color: #c31b4e;
 }
 
-.workspace-row-menu-trigger:focus-visible {
+.workspace-row-delete:focus-visible {
   outline: 2px solid #611f69;
   outline-offset: 1px;
-}
-
-.workspace-row-dropdown {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
-  z-index: 20;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 150px;
-  padding: 4px;
-  border: 1px solid #e8e6ee;
-  border-radius: 8px;
-  background: #fff;
-  box-shadow: 0 8px 20px rgba(29, 28, 29, 0.14);
-}
-
-.workspace-row-dropdown-item {
-  padding: 8px 10px;
-  border: none;
-  border-radius: 6px;
-  background: none;
-  color: #1d1c1d;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.4;
-  text-align: left;
-  cursor: pointer;
-  transition: background 0.15s ease;
-}
-
-.workspace-row-dropdown-item:hover:not(:disabled) {
-  background: #f6f5f9;
-}
-
-.workspace-row-dropdown-item:focus-visible {
-  outline: 2px solid #611f69;
-  outline-offset: -2px;
-}
-
-.workspace-row-dropdown-item-danger {
-  color: #e01e5a;
-}
-
-.workspace-row-dropdown-item-danger:hover:not(:disabled) {
-  background: #fdecef;
 }
 
 /* --- Modal de confirmacion para eliminar un espacio de trabajo --- */
@@ -393,10 +378,11 @@
   }
 
   .workspace-row-arrow {
-    font-size: 18px;
+    width: 60px;
+    height: 60px;
   }
 
-  .workspace-row-menu {
+  .workspace-row-delete {
     margin-right: 2px;
   }
 

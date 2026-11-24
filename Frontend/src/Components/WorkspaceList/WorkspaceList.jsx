@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import { deleteWorkspace } from '../../services/workspacesService'
 import { getInitials } from '../../utils/avatar.util'
 import workspace_logo from '../../assets/ava_0018-88.png'
+import arrow_icon from '../../assets/Arrow.png'
 import './WorkspaceList.css'
 
 /* Colores estilo Slack para los avatares de iniciales */
@@ -17,39 +18,6 @@ function WorkspaceRow({ workspace, onRequestDelete }) {
 
     /* Solo el owner puede eliminar el espacio de trabajo (lo valida el backend) */
     const is_owner = workspace.member_rol === 'owner'
-
-    const [menu_open, setMenuOpen] = useState(false)
-    const menu_container_ref = useRef(null)
-
-    /* Cerramos el menu al hacer clic afuera o al presionar Escape */
-    useEffect(
-        () => {
-            if (!menu_open) {
-                return
-            }
-
-            function handleDocumentClick(event) {
-                if (menu_container_ref.current && !menu_container_ref.current.contains(event.target)) {
-                    setMenuOpen(false)
-                }
-            }
-
-            function handleDocumentKeyDown(event) {
-                if (event.key === 'Escape') {
-                    setMenuOpen(false)
-                }
-            }
-
-            document.addEventListener('mousedown', handleDocumentClick)
-            document.addEventListener('keydown', handleDocumentKeyDown)
-
-            return () => {
-                document.removeEventListener('mousedown', handleDocumentClick)
-                document.removeEventListener('keydown', handleDocumentKeyDown)
-            }
-        },
-        [menu_open]
-    )
 
     return (
         <div className="workspace-row">
@@ -96,42 +64,40 @@ function WorkspaceRow({ workspace, onRequestDelete }) {
                     </div>
                 </div>
 
-                <span className="workspace-row-arrow" aria-hidden="true">→</span>
+                <img
+                    className="workspace-row-arrow"
+                    src={arrow_icon}
+                    alt=""
+                    aria-hidden="true"
+                />
             </Link>
 
             {is_owner && (
-                <div className="workspace-row-menu" ref={menu_container_ref}>
-                    <button
-                        type="button"
-                        className={
-                            menu_open
-                                ? 'workspace-row-menu-trigger workspace-row-menu-trigger-open'
-                                : 'workspace-row-menu-trigger'
-                        }
-                        aria-haspopup="menu"
-                        aria-expanded={menu_open}
-                        aria-label={`Acciones de ${workspace.workspace_nombre}`}
-                        onClick={() => setMenuOpen((open) => !open)}
+                <button
+                    type="button"
+                    className="workspace-row-delete"
+                    aria-label={`Eliminar ${workspace.workspace_nombre}`}
+                    title="Eliminar espacio de trabajo"
+                    onClick={() => onRequestDelete(workspace)}
+                >
+                    <svg
+                        viewBox="0 0 24 24"
+                        width="20"
+                        height="20"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden="true"
                     >
-                        ⋯
-                    </button>
-
-                    {menu_open && (
-                        <div className="workspace-row-dropdown" role="menu">
-                            <button
-                                type="button"
-                                className="workspace-row-dropdown-item workspace-row-dropdown-item-danger"
-                                role="menuitem"
-                                onClick={() => {
-                                    setMenuOpen(false)
-                                    onRequestDelete(workspace)
-                                }}
-                            >
-                                Eliminar
-                            </button>
-                        </div>
-                    )}
-                </div>
+                        <path d="M3 6h18" />
+                        <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+                        <path d="M10 11v6" />
+                        <path d="M14 11v6" />
+                    </svg>
+                </button>
             )}
 
         </div>
@@ -256,6 +222,25 @@ export default function WorkspaceList({
                     <p className="workspace-card-eyebrow">Listos para iniciar</p>
                     {renderContent()}
                 </div>
+
+                <footer className="workspace-card-footer">
+                    <Link
+                        className="workspace-card-footer-link"
+                        to="/create-workspace"
+                    >
+                        Crear un nuevo espacio de trabajo
+                    </Link>
+
+                    <p className="workspace-card-footer-help">
+                        ¿No encuentras tu espacio de trabajo?{' '}
+                        <Link
+                            className="workspace-card-footer-link"
+                            to="/login"
+                        >
+                            Prueba con otro correo electrónico
+                        </Link>
+                    </p>
+                </footer>
 
             </section>
 

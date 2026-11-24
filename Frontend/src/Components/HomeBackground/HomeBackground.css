@@ -1,0 +1,204 @@
+/* HomeBackground: fondo tecnologico/gaming estilo hero de Discord.
+   Capa independiente decorativa: se posiciona detras de todo el
+   contenido (.home-screen le da position relative y min-height), no
+   captura eventos y no debe contener texto ni elementos interactivos.
+
+   Composicion:
+   1. Base: azul marino casi negro, mas luminoso hacia abajo/derecha.
+   2. Wash: vineta superior + intensificacion del azul al frente.
+   3. Glows radiales: luz ambiental azul/violeta sin bordes definidos.
+   4. Shapes: formas abstractas con blur y glow suave (profundidad).
+   5. Particulas: tres capas (lejanas, medias, cercanas). */
+
+.home-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+
+  /* Base: degradado de azul marino profundo (arriba/izquierda) hacia
+     un azul electrico que se enciende abajo y a la derecha. */
+  background:
+    linear-gradient(160deg,
+      #04060f 0%,
+      #070b1d 35%,
+      #0c1330 62%,
+      #142052 85%,
+      #1b2b6b 100%
+    );
+}
+
+/* --- Capa 1: vineta y refuerzo del degradado --- */
+
+.home-bg-wash {
+  position: absolute;
+  inset: 0;
+
+  background:
+    /* vineta oscura en bordes y zona superior */
+    radial-gradient(120% 90% at 50% 0%,
+      rgba(2, 4, 10, 0.85) 0%,
+      rgba(2, 4, 10, 0.35) 38%,
+      transparent 70%
+    ),
+    radial-gradient(140% 110% at 50% 50%,
+      transparent 55%,
+      rgba(2, 4, 10, 0.55) 100%
+    ),
+    /* el azul se hace mas intenso y luminoso hacia abajo/derecha */
+    linear-gradient(215deg,
+      transparent 30%,
+      rgba(64, 78, 237, 0.14) 62%,
+      rgba(64, 78, 237, 0.30) 100%
+    );
+}
+
+/* --- Capa 2: resplandores radiales difusos (glow ambiental) --- */
+
+.home-bg-glow {
+  position: absolute;
+  border-radius: 50%;
+}
+
+/* Fuente de luz principal: surge desde abajo, lado derecho */
+.home-bg-glow-primary {
+  width: 140vw;
+  height: 140vw;
+  right: -45vw;
+  bottom: -85vw;
+
+  background: radial-gradient(circle,
+    rgba(88, 101, 242, 0.38) 0%,
+    rgba(64, 78, 237, 0.18) 32%,
+    rgba(64, 78, 237, 0.06) 55%,
+    transparent 72%
+  );
+}
+
+/* Resplandor tenue violeta, contrapeso arriba a la izquierda */
+.home-bg-glow-secondary {
+  width: 70vw;
+  height: 70vw;
+  left: -25vw;
+  top: -22vw;
+
+  background: radial-gradient(circle,
+    rgba(120, 82, 255, 0.14) 0%,
+    rgba(120, 82, 255, 0.05) 45%,
+    transparent 70%
+  );
+}
+
+/* Micro-brillo frio al centro-derecha, para romper la planicie */
+.home-bg-glow-accent {
+  width: 46vw;
+  height: 46vw;
+  right: 4vw;
+  top: 38%;
+
+  background: radial-gradient(circle,
+    rgba(96, 165, 250, 0.10) 0%,
+    transparent 62%
+  );
+}
+
+/* --- Capa 3: formas abstractas flotantes, desenfocadas --- */
+
+.home-bg-shapes,
+.home-bg-shape {
+  position: absolute;
+  inset: 0;
+}
+
+.home-bg-shape {
+  pointer-events: none;
+  animation: home-bg-shape-float 22s ease-in-out infinite;
+}
+
+/* anillos finos con glow suave */
+.home-bg-shape-ring {
+  border-radius: 50%;
+  border: 1px solid rgba(160, 180, 255, 0.9);
+  box-shadow:
+    0 0 18px rgba(88, 101, 242, 0.55),
+    inset 0 0 14px rgba(88, 101, 242, 0.35);
+}
+
+/* cuadrados redondeados giroscopicos */
+.home-bg-shape-square {
+  border-radius: 6px;
+  border: 1px solid rgba(150, 170, 255, 0.9);
+  box-shadow: 0 0 16px rgba(88, 101, 242, 0.5);
+}
+
+/* puntos calientes totalmente difusos */
+.home-bg-shape-dot {
+  border-radius: 50%;
+  background: radial-gradient(circle,
+    rgba(170, 190, 255, 0.95) 0%,
+    rgba(88, 101, 242, 0.55) 45%,
+    transparent 75%
+  );
+}
+
+@keyframes home-bg-shape-float {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50%      { transform: translate3d(-10px, -18px, 0); }
+}
+
+/* --- Capa 4: particulas en profundidades --- */
+
+.home-bg-particles,
+.home-bg-particle-layer {
+  position: absolute;
+  inset: 0;
+}
+
+.home-bg-particle {
+  position: absolute;
+  border-radius: 50%;
+  background: #c7d2ff;
+  box-shadow: 0 0 6px rgba(151, 171, 255, 0.8);
+  will-change: transform, opacity;
+}
+
+/* capa 0: polvo lejano, estatico y muy tenue, apenas visible */
+.home-bg-particle-layer-0 .home-bg-particle {
+  filter: blur(0.4px);
+}
+
+/* capa 1: estrellas medias, titilan */
+.home-bg-particle-layer-1 .home-bg-particle {
+  animation-name: home-bg-twinkle;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+/* capa 2: particulas cercanas, con glow mas notorio y deriva lenta */
+.home-bg-particle-layer-2 .home-bg-particle {
+  filter: blur(1.2px);
+  box-shadow: 0 0 10px rgba(170, 190, 255, 0.9);
+  animation-name: home-bg-drift;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+}
+
+@keyframes home-bg-twinkle {
+  0%, 100% { transform: scale(1); opacity: var(--twinkle-low, 0.25); }
+  50%      { transform: scale(1.35); opacity: var(--twinkle-high, 0.9); }
+}
+
+@keyframes home-bg-drift {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  33%      { transform: translate3d(calc(var(--drift, 6px) * 1), -14px, 0); }
+  66%      { transform: translate3d(calc(var(--drift, 6px) * -1), -6px, 0); }
+}
+
+/* Accesibilidad: sin movimiento si el usuario lo pide */
+@media (prefers-reduced-motion: reduce) {
+  .home-bg-shape,
+  .home-bg-particle {
+    animation: none;
+  }
+}

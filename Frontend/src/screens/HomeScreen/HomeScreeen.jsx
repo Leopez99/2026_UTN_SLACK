@@ -5,6 +5,7 @@ import InviteUserModal from '../../Components/WorkspaceList/InviteUserModal'
 import useWorkspaceList from '../../hooks/useWorkspaceList'
 import logo_mark from '../../assets/Logos dislack/Logo dislack.png'
 import logo_wordmark from '../../assets/Logos dislack/Titulo dislack.png'
+import HomeBackground from '../../Components/HomeBackground/HomeBackground'
 import './HomeScreen.css'
 
 function HomeScreeen() {
@@ -33,6 +34,9 @@ function HomeScreeen() {
 
   return (
     <div className="home-screen">
+
+      {/* Fondo decorativo independiente (capa 0, detras de todo) */}
+      <HomeBackground />
 
       <header className="home-topbar">
         <div className="home-brand">

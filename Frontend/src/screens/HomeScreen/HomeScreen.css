@@ -1,11 +1,14 @@
 /* HomeScreen: home estilo referencia.
-   Hero aubergine con curva en el borde inferior y fondo exterior con la
-   paleta de Discord. Las tarjetas se mantienen blancas como en la referencia. */
+   El fondo lo provee la capa independiente HomeBackground (azul
+   profundo con glow y particulas); la pantalla es transparente y el
+   contenido se superpone sobre ella. Las tarjetas se mantienen
+   blancas como en la referencia. */
 
 .home-screen {
+  position: relative;
   min-height: 100vh;
   overflow-x: clip;
-  background: #fff;
+  background: transparent;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   color: #1d1c1d;
   box-sizing: border-box;
@@ -29,7 +32,11 @@
   gap: 16px;
   min-height: 64px;
   padding: 10px 28px;
-  background: #4a154b;
+  /* translucido sobre el fondo con leve desenfoque */
+  background: rgba(5, 8, 22, 0.72);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(151, 171, 255, 0.12);
 }
 
 .home-brand {
@@ -123,13 +130,15 @@
   font-size: 44px;
   font-weight: 800;
   letter-spacing: -1px;
-  color: #1d1c1d;
+  color: #f2f4ff;
+  text-shadow: 0 2px 24px rgba(4, 8, 26, 0.55);
 }
 
 .home-subtitle {
   margin: 0;
   font-size: 16px;
-  color: #616061;
+  color: #b9c2ea;
+  text-shadow: 0 1px 12px rgba(4, 8, 26, 0.5);
 }
 
 /* --- Contenido superpuesto a la curva --- */
@@ -155,14 +164,14 @@
   align-items: center;
   gap: 8px;
   margin: 0 0 14px;
-  color: #1d1c1d;
+  color: #fff;
   font-size: 15px;
   font-weight: 700;
 }
 
 .home-section-icon {
   flex: 0 0 auto;
-  color: #616061;
+  color: #b9c2ea;
 }
 
 /* --- Tarjeta "Quieres invitar a otras personas?" --- */
