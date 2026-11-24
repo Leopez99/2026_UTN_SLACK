@@ -340,52 +340,6 @@
   outline-offset: 2px;
 }
 
-/* --- Pie: crear un nuevo espacio de trabajo / cambiar de usuario --- */
-
-.workspace-card-footer {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-  padding: 14px 20px;
-  border-top: 1px solid #e8e6ee;
-  background: #fbfafc;
-}
-
-.workspace-card-create,
-.workspace-card-logout,
-.workspace-card-invite {
-  padding: 0;
-  border: none;
-  background: none;
-  color: #1264a3;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 600;
-  line-height: 1.4;
-  text-decoration: none;
-  cursor: pointer;
-}
-
-.workspace-card-create:hover,
-.workspace-card-logout:hover,
-.workspace-card-invite:hover:not(:disabled) {
-  text-decoration: underline;
-}
-
-.workspace-card-create:focus-visible,
-.workspace-card-logout:focus-visible,
-.workspace-card-invite:focus-visible {
-  outline: 2px solid #611f69;
-  outline-offset: 2px;
-  border-radius: 2px;
-}
-
-.workspace-card-invite:disabled {
-  cursor: not-allowed;
-  text-decoration: none;
-}
-
 /* --- Estados de carga / error / vacio --- */
 
 .workspace-card-state {

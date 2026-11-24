@@ -529,6 +529,7 @@ body.ws-scroll-locked {
 /* ---------- Chat ---------- */
 
 .ws-chat {
+  position: relative;
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -754,6 +755,72 @@ body.ws-scroll-locked {
 }
 
 /* ---------- Composer ---------- */
+
+/* Aviso de mensajes nuevos de otros miembros (WebSocket) */
+.ws-new-messages {
+  position: absolute;
+  left: 50%;
+  bottom: 76px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  max-width: calc(100% - 32px);
+  padding: 8px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: var(--ws-accent);
+  color: #fff;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  transform: translateX(-50%);
+  animation: ws-new-messages-in 0.18s ease-out;
+  transition: background 0.15s ease;
+}
+
+.ws-new-messages:hover {
+  background: var(--ws-accent-hover);
+}
+
+.ws-new-messages:focus-visible {
+  outline: 2px solid var(--ws-text-bright);
+  outline-offset: 2px;
+}
+
+.ws-new-messages-icon {
+  flex: 0 0 auto;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.ws-new-messages-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.ws-new-messages-author {
+  font-size: 11px;
+  font-weight: 500;
+  opacity: 0.85;
+}
+
+@keyframes ws-new-messages-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
 
 .ws-composer-wrap {
   flex: 0 0 auto;

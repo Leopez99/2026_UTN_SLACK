@@ -42,3 +42,40 @@ Al agregar un endpoint nuevo, agregarlo en `paths` y reutilizar los schemas/resp
 
 En Postman: **Import → Link** y pegar `http://localhost:8080/api-docs.json`, o importar el archivo JSON.
 
+## Mensajes en tiempo real (WebSockets)
+
+El backend expone un endpoint WebSocket con **Socket.IO** montado sobre el mismo
+servidor HTTP de Express (`Backend/src/realtime/socket.server.js`). Se despliega
+en el mismo proyecto de Vercel que la API: no hay que levantar un servidor aparte.
+
+En el frontend, cuando otro miembro publica en el canal abierto, aparece un
+botón flotante **"Hay nuevos mensajes"**; los mensajes se recargan recién cuando
+el usuario hace clic (no se insertan solos).
+
+### Eventos
+
+| Evento | Dirección | Payload |
+| --- | --- | --- |
+| `join_channel` | cliente → servidor | `{ channel_id }` (ack `{ ok, data? , message? }`) |
+| `leave_channel` | cliente → servidor | `{ channel_id }` |
+| `send_message` | cliente → servidor | `{ channel_id, contenido }` (ack con `data.message_created`) |
+| `mensaje-nuevo` | servidor → cliente | `{ canal_id, mensaje }` |
+
+El handshake se autentica con el mismo JWT de la API (`socket.handshake.auth.token`).
+El servidor valida que el usuario sea miembro del workspace del canal antes de
+unirlo al room `canal:<id>` y antes de guardar un mensaje.
+
+### Consideraciones de Vercel
+
+- WebSockets requieren **Fluid Compute** (activado por defecto en proyectos
+  creados desde abril de 2025; en proyectos viejos se activa en Settings → Functions).
+- El cliente debe usar `transports: ['websocket']`: el long-polling HTTP de
+  Socket.IO no funciona con el ciclo de vida de las Functions.
+- Cada conexión se cierra cuando la Function llega a su duración máxima
+  (300 s en Hobby). Socket.IO reconecta solo y el frontend recarga los mensajes
+  al reconectar.
+- Cada conexión queda fijada a una instancia. Para que el aviso llegue a miembros
+  conectados a otras instancias hace falta un adaptador de pub/sub externo
+  (por ejemplo `@socket.io/redis-adapter` con Redis de Vercel Marketplace).
+
+

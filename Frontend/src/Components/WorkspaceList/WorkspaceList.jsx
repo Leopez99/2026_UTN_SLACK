@@ -1,10 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router'
-import useWorkspaceList from '../../hooks/useWorkspaceList'
+import { Link } from 'react-router'
 import { deleteWorkspace } from '../../services/workspacesService'
 import { getInitials } from '../../utils/avatar.util'
 import workspace_logo from '../../assets/ava_0018-88.png'
-import InviteUserModal from './InviteUserModal'
 import './WorkspaceList.css'
 
 /* Colores estilo Slack para los avatares de iniciales */
@@ -12,6 +10,7 @@ const AVATAR_COLORS = ['#e8912d', '#2bac76', '#36c5f0', '#e01e5a', '#611f69', '#
 
 const MAX_VISIBLE_MEMBERS = 4
 
+/* Fila de un espacio de trabajo dentro de la tarjeta */
 function WorkspaceRow({ workspace, onRequestDelete }) {
     const members = workspace.members ?? []
     const members_count = members.length
@@ -139,36 +138,26 @@ function WorkspaceRow({ workspace, onRequestDelete }) {
     )
 }
 
-export default function WorkspaceList() {
-
-    const {
-        workspaces_error, 
-        workspaces_loading, 
-        workspaces_response, 
-        reloadWorkspaces
-    } = useWorkspaceList()
-
-    const navigate = useNavigate()
+/*
+Tarjeta con la lista de espacios de trabajo. Recibe los datos por props
+(los trae el HomeScreen con useWorkspaceList) y maneja la eliminacion
+(solo el owner) con su modal de confirmacion.
+*/
+export default function WorkspaceList({
+    workspaces_response,
+    workspaces_error,
+    workspaces_loading,
+    onReload
+}) {
 
     /* Workspace pendiente de confirmar para eliminar */
     const [workspace_to_delete, setWorkspaceToDelete] = useState(null)
     const [delete_loading, setDeleteLoading] = useState(false)
     const [delete_error, setDeleteError] = useState(null)
 
-    /* Modal de invitacion abierto */
-    const [invite_open, setInviteOpen] = useState(false)
-
     function requestDelete(workspace) {
         setDeleteError(null)
         setWorkspaceToDelete(workspace)
-    }
-
-    function requestInvite() {
-        setInviteOpen(true)
-    }
-
-    function cancelInvite() {
-        setInviteOpen(false)
     }
 
     function cancelDelete() {
@@ -190,7 +179,7 @@ export default function WorkspaceList() {
         try {
             await deleteWorkspace(workspace_to_delete.workspace_id)
             setWorkspaceToDelete(null)
-            reloadWorkspaces()
+            onReload()
         }
         catch (error) {
             setDeleteError(error.message)
@@ -229,14 +218,14 @@ export default function WorkspaceList() {
         if (workspaces_error) {
             return <div className="workspace-card-state">
                 <span className="error-text">Error: {workspaces_error}</span>
-                <button className="workspace-card-retry" onClick={reloadWorkspaces}> Recargar </button>
+                <button className="workspace-card-retry" onClick={onReload}> Recargar </button>
             </div>
         }
 
         if (!workspaces_response) {
             return <div className="workspace-card-state">
                 <span className="error-text">Error: Ocurrio un problema al obtener la lista de espacios de trabajo</span>
-                <button className="workspace-card-retry" onClick={reloadWorkspaces}> Recargar </button>
+                <button className="workspace-card-retry" onClick={onReload}> Recargar </button>
             </div>
         }
 
@@ -268,36 +257,7 @@ export default function WorkspaceList() {
                     {renderContent()}
                 </div>
 
-                <footer className="workspace-card-footer">
-                    <Link className="workspace-card-create" to="/create-workspace">
-                        Crear un nuevo espacio de trabajo
-                    </Link>
-                    <button
-                        className="workspace-card-logout"
-                        type='button'
-                        onClick={() => navigate('/login')}
-                    >
-                        Logearse con otro usuario
-                    </button>
-                    <button
-                        className="workspace-card-invite"
-                        type='button'
-                        onClick={requestInvite}
-                        disabled={workspaces_loading || !workspaces_response}
-                    >
-                        Invitar a un usuario
-                    </button>
-                </footer>
-
             </section>
-
-            {invite_open && (
-                <InviteUserModal
-                    workspaces={workspaces_response?.data?.workspaces ?? []}
-                    onClose={cancelInvite}
-                    onInvited={reloadWorkspaces}
-                />
-            )}
 
             {workspace_to_delete && (
                 <div

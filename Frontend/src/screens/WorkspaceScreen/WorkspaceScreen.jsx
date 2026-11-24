@@ -2,9 +2,11 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router'
 import useWorkspaceScreen from '../../hooks/useWorkspaceScreen'
 import useWorkspaceChannels from '../../hooks/useWorkspaceChannels'
+import useChannelRealtime from '../../hooks/useChannelRealtime'
 import { getSessionUser } from '../../utils/session.util'
 import { findDefaultChannel, groupChannelsByCategory } from '../../utils/channel.util'
 import { createChannel, createChannelMessage, deleteChannel, getChannelMessages } from '../../services/channelsService'
+import { isSocketConnected, sendChannelMessage } from '../../services/socketService'
 import WorkspaceRail from './components/WorkspaceRail'
 import ChannelSidebar from './components/ChannelSidebar'
 import ChatArea from './components/ChatArea'
@@ -55,6 +57,10 @@ function WorkspaceScreen() {
   const [messages_loading, set_messages_loading] = useState(false)
   const [messages_error, set_messages_error] = useState(null)
   const [messages_reload_key, set_messages_reload_key] = useState(0)
+
+  // Aviso de mensajes nuevos de otros miembros (no se insertan solos: el
+  // usuario decide cuando recargar con el boton de ChatArea)
+  const [new_messages_notice, set_new_messages_notice] = useState(null)
 
   // La pantalla ocupa todo el viewport: el documento no debe scrollear.
   useEffect(() => {
@@ -135,6 +141,19 @@ function WorkspaceScreen() {
     ?? default_channel
   const active_channel_id = active_channel?.canal_id ?? null
 
+  // Tiempo real del canal activo: los mensajes de otros miembros se avisan
+  // con el boton "Hay nuevos mensajes"; el usuario recarga cuando quiere.
+  useChannelRealtime({
+    channel_id: active_channel_id,
+    on_new_message: handleNewChannelMessage,
+    on_reconnect: reloadMessages
+  })
+
+  // Al cambiar de canal el aviso pendiente deja de tener sentido.
+  useEffect(() => {
+    set_new_messages_notice(null)
+  }, [active_channel_id])
+
   // Carga los mensajes del canal activo. Se limpia la lista al cambiar de canal
   // para no mostrar mensajes de otro canal mientras llega la respuesta.
   useEffect(() => {
@@ -185,7 +204,19 @@ function WorkspaceScreen() {
   const close_panel = () => set_open_panel(null)
 
   function reloadMessages() {
+    set_new_messages_notice(null)
     set_messages_reload_key((current_key) => current_key + 1)
+  }
+
+  function handleNewChannelMessage(message) {
+    set_new_messages_notice((current_notice) => ({
+      count: (current_notice?.count ?? 0) + 1,
+      author_name: message?.autor?.nombre ?? 'Un miembro'
+    }))
+  }
+
+  function handleShowNewMessages() {
+    reloadMessages()
   }
 
   async function handleSendMessage(content) {
@@ -193,17 +224,29 @@ function WorkspaceScreen() {
       return null
     }
 
-    const response_body = await createChannelMessage(
-      workspace_id,
-      active_channel_id,
-      content
-    )
+    let message_created = null
 
-    const message_created = response_body?.data?.message_created
+    if (isSocketConnected()) {
+      // Con WebSocket abierto el mensaje viaja por el socket: la misma
+      // instancia que lo persiste avisa a los demas miembros del canal.
+      message_created = await sendChannelMessage(active_channel_id, content)
+    }
+    else {
+      // Sin socket disponible se usa el endpoint REST de siempre.
+      const response_body = await createChannelMessage(
+        workspace_id,
+        active_channel_id,
+        content
+      )
+
+      message_created = response_body?.data?.message_created ?? null
+    }
 
     if (message_created) {
       set_messages((current_messages) => [...current_messages, message_created])
     }
+
+    set_new_messages_notice(null)
 
     return message_created
   }
@@ -323,12 +366,14 @@ function WorkspaceScreen() {
         messages={messages}
         messages_loading={messages_loading}
         messages_error={messages_error}
+        new_messages_notice={new_messages_notice}
         members_count={members.length}
         channels_open={open_panel === 'canales'}
         members_open={open_panel === 'miembros'}
         on_toggle_channels={() => toggle_panel('canales')}
         on_toggle_members={() => toggle_panel('miembros')}
         on_reload_messages={reloadMessages}
+        on_show_new_messages={handleShowNewMessages}
         on_send_message={handleSendMessage}
       />
 

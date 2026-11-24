@@ -1,6 +1,7 @@
 import mongoose from "mongoose"
 import channel_repository from "../repositories/channel.repository.js"
 import channel_message_repository from "../repositories/channelMessage.repository.js"
+import { emitNewChannelMessage } from "../realtime/realtime.emitter.js"
 import ServerError from "../utils/error.util.js"
 import { DEFAULT_CHANNEL_NAME, toChannelResponse } from "../utils/channel.util.js"
 import { toChannelMessageResponse } from "../utils/channelMessage.util.js"
@@ -153,12 +154,18 @@ export async function createChannelMessage(request, response) {
         message_content
     )
 
+    const message_response = toChannelMessageResponse(message_created)
+
+    /* Avisa por WebSocket a los miembros suscritos al canal (si esta instancia
+       tiene el servidor realtime activo). */
+    emitNewChannelMessage(channel._id, message_response)
+
     return response.status(201).send({
         ok: true,
         status: 201,
         message: 'Mensaje creado',
         data: {
-            message_created: toChannelMessageResponse(message_created)
+            message_created: message_response
         }
     })
 }

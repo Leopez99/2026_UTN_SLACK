@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Avatar from './Avatar'
 import {
   IconGif,
@@ -117,12 +117,14 @@ function ChatArea({
   messages = [],
   messages_loading = false,
   messages_error = null,
+  new_messages_notice = null,
   members_count = 0,
   channels_open = false,
   members_open = false,
   on_toggle_channels,
   on_toggle_members,
   on_reload_messages,
+  on_show_new_messages,
   on_send_message
 }) {
   const timeline = buildTimeline(messages)
@@ -132,6 +134,28 @@ function ChatArea({
   const [message_text, set_message_text] = useState('')
   const [sending_message, set_sending_message] = useState(false)
   const [send_message_error, set_send_message_error] = useState(null)
+
+  const messages_ref = useRef(null)
+
+  /*
+  Acompaña la conversacion: si el usuario ya estaba abajo, los mensajes
+  nuevos (o la recarga manual) lo dejan al final. Si estaba leyendo mas
+  arriba no se le mueve el scroll.
+  */
+  useEffect(() => {
+    const messages_element = messages_ref.current
+
+    if (!messages_element || messages_loading) {
+      return
+    }
+
+    const distance_to_bottom =
+      messages_element.scrollHeight - messages_element.scrollTop - messages_element.clientHeight
+
+    if (distance_to_bottom < 160) {
+      messages_element.scrollTop = messages_element.scrollHeight
+    }
+  }, [messages.length, messages_loading])
 
   async function handleSendMessage(event) {
     event.preventDefault()
@@ -218,7 +242,7 @@ function ChatArea({
         </div>
       </header>
 
-      <div className="ws-messages">
+      <div className="ws-messages" ref={messages_ref}>
         <div className="ws-messages-inner">
 
           <div className="ws-chat-welcome">
@@ -304,6 +328,24 @@ function ChatArea({
 
         </div>
       </div>
+
+      {new_messages_notice && (
+        <button
+          type="button"
+          className="ws-new-messages"
+          onClick={on_show_new_messages}
+        >
+          <span className="ws-new-messages-icon" aria-hidden="true">💬</span>
+          <span className="ws-new-messages-text">
+            Hay nuevos mensajes
+            <span className="ws-new-messages-author">
+              {new_messages_notice.count === 1
+                ? `${new_messages_notice.author_name} escribió en este canal`
+                : `${new_messages_notice.count} mensajes nuevos en este canal`}
+            </span>
+          </span>
+        </button>
+      )}
 
       <div className="ws-composer-wrap">
         <form className="ws-composer" onSubmit={handleSendMessage}>
