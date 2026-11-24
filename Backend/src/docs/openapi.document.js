@@ -202,11 +202,11 @@ const openapi_document = {
                         }
                     ),
                     400: error_response(
-                        'Datos inválidos o email ya registrado.',
+                        'Datos inválidos. La respuesta para un email ya registrado es idéntica a cualquier otro error de registro (no se revela si el email existe).',
                         [
                             ['campos_faltantes', 400, 'Email, password and username is required'],
                             ['email_invalido', 400, 'Email is incorrect'],
-                            ['email_en_uso', 400, 'Email is already used']
+                            ['generico_registro', 400, 'Sucedio un error al tratar de crear su cuenta']
                         ]
                     ),
                     500: INTERNAL_ERROR[500],
@@ -264,9 +264,9 @@ const openapi_document = {
                         ]
                     ),
                     403: error_response(
-                        'El usuario existe y la contraseña es correcta, pero todavía no verificó su email.',
+                        'Se devuelve un error genérico para no revelar si el email está verificado o no.',
                         [
-                            ['email_no_verificado', 403, 'Email no verificado']
+                            ['email_no_verificado', 403, 'Sucedio un error al tratar de iniciar sesion en su cuenta']
                         ]
                     ),
                     500: INTERNAL_ERROR[500],

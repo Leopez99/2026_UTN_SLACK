@@ -104,6 +104,7 @@
 /* ---------- Panel del formulario (columna derecha) ---------- */
 
 .login-panel {
+  position: relative;
   display: flex;
   align-items: stretch;
   justify-content: center;
@@ -142,6 +143,11 @@
 
 .login-form > .login-button-outline {
   margin-top: 28px;
+}
+
+/* En el register los botones de Registrarse e Iniciar sesion quedan mas juntos */
+.login-form--register > .login-button-outline {
+  margin-top: 0;
 }
 
 .login-input {
@@ -277,6 +283,135 @@
   border: 0;
 }
 
+/* ---------- Variante form-only: pantallas con solo el formulario (Crear cuenta, Olvidaste tu contraseña) ----------
+   Misma vista que el login mobile: panel completo, logo y formulario, sin hero. */
+
+.login-screen--form-only {
+  grid-template-columns: 1fr;
+}
+
+/* El logo, titulo, descripcion y formulario se centran juntos como un solo bloque */
+.login-screen--form-only .login-panel-inner {
+  justify-content: center;
+}
+
+.login-screen--form-only .login-form {
+  margin: 36px 0 0;
+}
+
+.login-screen--form-only .login-panel-logo {
+  display: block;
+  width: 88px;
+  margin: 0 auto 48px;
+}
+
+/* Descripcion corta debajo del titulo */
+.login-subtitle {
+  margin: 30px auto 0;
+  align-self: center;
+  max-width: 440px;
+  text-align: center;
+  font-size: 25px;
+  line-height: 1.45;
+  color: var(--login-text-muted);
+}
+
+/* La palabra DISLACK con los colores del logo (violeta, turquesa, verde, amarillo y rosa) */
+.login-subtitle-brand {
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: linear-gradient(
+    90deg,
+    #7a83f2 0%,
+    #45c4bd 26%,
+    #2eb67d 48%,
+    #e8b64c 72%,
+    #e24483 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* ---------- Botón para volver a /login (flecha, estilo app mobile) ---------- */
+
+.login-back {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--login-text-muted);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease, transform 0.05s ease;
+}
+
+.login-back:hover {
+  background: var(--login-hover);
+  color: var(--login-text);
+}
+
+.login-back:active {
+  transform: scale(0.96);
+}
+
+/* ---------- Campo de contraseña con toggle para mostrar/ocultar ---------- */
+
+.login-password-field {
+  position: relative;
+  width: 100%;
+}
+
+.login-input-password {
+  padding-right: 42px;
+}
+
+.login-password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 2px;
+  transform: translateY(-50%);
+  display: grid;
+  place-items: center;
+  padding: 6px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--login-text-muted);
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.login-password-toggle:hover {
+  color: var(--login-text);
+}
+
+/* ---------- Texto/link alternativo al pie del formulario ---------- */
+
+.login-alt {
+  margin: 0;
+  align-self: center;
+  font-size: 13px;
+  color: var(--login-text-muted);
+}
+
+.login-alt-link {
+  color: var(--login-text-bright);
+  text-decoration: none;
+}
+
+.login-alt-link:hover {
+  text-decoration: underline;
+}
+
 /* ---------- Responsive ---------- */
 
 /* Tablets: las dos columnas se compactan */
@@ -352,5 +487,9 @@
 
   .login-form > .login-button-outline {
     margin-top: 16px;
+  }
+
+  .login-form--register > .login-button-outline {
+    margin-top: 0;
   }
 }

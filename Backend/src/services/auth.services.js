@@ -41,8 +41,12 @@ export async function register(username, email, password) {
     //Validar si el mail ya esta registrado
     const user_already_exist = await user_repository.getByEmail(email)
     if (user_already_exist) {
+        /*
+        No revelamos que el email ya esta registrado: responder con un mensaje
+        generico evita que alguien pueda enumerar que usuarios existen en la plataforma.
+        */
         throw new ServerError(
-            'Email is already used',
+            'Sucedio un error al tratar de crear su cuenta',
             400
         )
     }
@@ -125,7 +129,7 @@ export async function login(email, password) {
 
     if (!user.email_verificado) {
         throw new ServerError(
-            'Email no verificado',
+            'Sucedio un error al tratar de iniciar sesion en su cuenta',
             403
         )
     }
