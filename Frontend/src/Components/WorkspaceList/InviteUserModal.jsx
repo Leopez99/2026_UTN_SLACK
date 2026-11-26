@@ -1,30 +1,30 @@
 import { useEffect, useRef, useState } from 'react'
-import { getWorkspaceChannels } from '../../services/channelsService'
 import { createInvitation } from '../../services/workspacesService'
+import workspace_logo from '../../assets/Logos dislack/Logo dislack.png'
 import './InviteUserModal.css'
 
 /* Simple validacion de formato (la validez de que sea un usuario registrado la valida el backend) */
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
+/* Etiquetas legibles para los roles de la invitacion */
+const ROL_LABELS = { admin: 'admin', user: 'usuario' }
+
 /*
-Modal para invitar a un usuario a un espacio de trabajo desde el HomeScreen:
-- Select del espacio de trabajo al que invitar (opcionalmente preseleccionado
-  con initial_workspace_id, lo usa el WorkspaceScreen)
+Modal para invitar a un usuario a un espacio de trabajo:
+- Lista de espacios con su logo (opcionalmente preseleccionado con
+  initial_workspace_id, lo usa el WorkspaceScreen)
 - Input de email (tiene que ser de un usuario registrado)
-- Select del canal al que se invita (los canales cargan al elegir el espacio)
-Cualquier miembro puede invitar, sin importar su rol.
+- Rol del invitado: solo el owner del workspace elegido ve el selector
+  y puede dar admin; un admin o user siempre invita como usuario.
+Cualquier miembro puede invitar.
 */
 function InviteUserModal({ workspaces, onClose, onInvited, initial_workspace_id = '' }) {
 
     const [workspace_id, setWorkspaceId] = useState(initial_workspace_id)
+    const [invite_rol, setInviteRol] = useState('user')
 
     const [email, setEmail] = useState('')
     const [email_error, setEmailError] = useState(null)
-
-    const [channels, setChannels] = useState([])
-    const [channels_loading, setChannelsLoading] = useState(false)
-    const [channels_error, setChannelsError] = useState(null)
-    const [channel_id, setChannelId] = useState('')
 
     const [invite_loading, setInviteLoading] = useState(false)
     const [invite_error, setInviteError] = useState(null)
@@ -37,48 +37,8 @@ function InviteUserModal({ workspaces, onClose, onInvited, initial_workspace_id 
         (workspace) => String(workspace.workspace_id) === workspace_id
     )
 
-    /* Al elegir un espacio de trabajo cargamos sus canales */
-    useEffect(
-        () => {
-            setChannelId('')
-            setChannels([])
-            setChannelsError(null)
-
-            if (!workspace_id) {
-                return
-            }
-
-            let cancelled = false
-
-            async function loadChannels() {
-                setChannelsLoading(true)
-                setChannelsError(null)
-
-                try {
-                    const response = await getWorkspaceChannels(workspace_id)
-                    if (cancelled) {
-                        return
-                    }
-                    setChannels(response.data.channels)
-                    setChannelsLoading(false)
-                }
-                catch (error) {
-                    if (cancelled) {
-                        return
-                    }
-                    setChannelsError(error.message)
-                    setChannelsLoading(false)
-                }
-            }
-
-            loadChannels()
-
-            return () => {
-                cancelled = true
-            }
-        },
-        [workspace_id]
-    )
+    /* Solo un owner del espacio elegido puede invitar con rol admin */
+    const can_invite_admin = workspace_selected?.member_rol === 'owner'
 
     /* Foco en el input de email al abrir */
     useEffect(
@@ -112,6 +72,19 @@ function InviteUserModal({ workspaces, onClose, onInvited, initial_workspace_id 
         }
     }
 
+    function selectWorkspace(workspace) {
+        if (String(workspace.workspace_id) === workspace_id) {
+            return
+        }
+
+        setWorkspaceId(String(workspace.workspace_id))
+        setInviteRol('user')
+
+        if (invite_error) {
+            setInviteError(null)
+        }
+    }
+
     function handleEmailChange(event) {
         setEmail(event.target.value)
 
@@ -135,7 +108,7 @@ function InviteUserModal({ workspaces, onClose, onInvited, initial_workspace_id 
     }
 
     function canSubmit() {
-        return Boolean(workspace_id && email.trim() && !channels_loading)
+        return Boolean(workspace_id && email.trim())
     }
 
     async function handleSubmit(event) {
@@ -157,7 +130,7 @@ function InviteUserModal({ workspaces, onClose, onInvited, initial_workspace_id 
         try {
             const response = await createInvitation(workspace_id, {
                 email: email.trim(),
-                channel_id
+                rol: can_invite_admin ? invite_rol : 'user'
             })
 
             setInvitedUser(response.data.invitation_created)
@@ -193,12 +166,8 @@ function InviteUserModal({ workspaces, onClose, onInvited, initial_workspace_id 
 
                         <p className="invite-text">
                             <strong>{invited_user.usuario.nombre}</strong> ({invited_user.usuario.email}) ahora
-                            es miembro de <strong>{workspace_selected?.workspace_nombre ?? 'el espacio de trabajo'}</strong>
-                            {invited_user.canal ? (
-                                <> y fue invitado al canal <strong>#{invited_user.canal.canal_nombre}</strong></>
-                            ) : (
-                                ' sin canal de referencia'
-                            )}.
+                            es miembro de <strong>{workspace_selected?.workspace_nombre ?? 'el espacio de trabajo'}</strong>{' '}
+                            con rol <strong>{ROL_LABELS[invited_user.member_rol] ?? invited_user.member_rol}</strong>.
                         </p>
 
                         <div className="invite-actions">
@@ -238,31 +207,45 @@ function InviteUserModal({ workspaces, onClose, onInvited, initial_workspace_id 
                         ) : (
                             <>
                                 <p className="invite-text">
-                                    Elegí el espacio, escribí el email de un usuario registrado y el canal al que invitarlo.
+                                    Elegí el espacio y escribí el email de un usuario registrado.
                                 </p>
 
                                 <form className="invite-form" onSubmit={handleSubmit}>
 
-                                    <label className="invite-label" htmlFor="invite-workspace">
+                                    <span className="invite-label">
                                         Espacio de trabajo
-                                    </label>
-                                    <select
-                                        id="invite-workspace"
-                                        className="invite-select"
-                                        value={workspace_id}
-                                        onChange={(event) => setWorkspaceId(event.target.value)}
-                                        disabled={form_disabled}
+                                    </span>
+                                    <div
+                                        className="invite-workspace-list"
+                                        role="radiogroup"
+                                        aria-label="Espacio de trabajo"
                                     >
-                                        <option value="">Seleccionar espacio de trabajo</option>
-                                        {workspaces.map((workspace) => (
-                                            <option
-                                                key={workspace.workspace_id}
-                                                value={workspace.workspace_id}
-                                            >
-                                                {workspace.workspace_nombre} ({workspace.member_rol})
-                                            </option>
-                                        ))}
-                                    </select>
+                                        {workspaces.map((workspace) => {
+                                            const option_selected =
+                                                String(workspace.workspace_id) === workspace_id
+
+                                            return (
+                                                <button
+                                                    key={workspace.workspace_id}
+                                                    type="button"
+                                                    className={`invite-workspace-option${option_selected ? ' selected' : ''}`}
+                                                    role="radio"
+                                                    aria-checked={option_selected}
+                                                    disabled={form_disabled}
+                                                    onClick={() => selectWorkspace(workspace)}
+                                                >
+                                                    <img
+                                                        className="invite-workspace-logo"
+                                                        src={workspace.workspace_logo ?? workspace_logo}
+                                                        alt=""
+                                                    />
+                                                    <span className="invite-workspace-name">
+                                                        {workspace.workspace_nombre}
+                                                    </span>
+                                                </button>
+                                            )
+                                        })}
+                                    </div>
 
                                     <label className="invite-label" htmlFor="invite-email">
                                         Email del usuario
@@ -281,36 +264,23 @@ function InviteUserModal({ workspaces, onClose, onInvited, initial_workspace_id 
                                         <p className="invite-error">{email_error}</p>
                                     )}
 
-                                    <label className="invite-label" htmlFor="invite-channel">
-                                        Canal al que invitar
-                                    </label>
-                                    <select
-                                        id="invite-channel"
-                                        className="invite-select"
-                                        value={channel_id}
-                                        onChange={(event) => setChannelId(event.target.value)}
-                                        disabled={form_disabled || !workspace_id || Boolean(channels_error)}
-                                    >
-                                        <option value="">
-                                            {!workspace_id
-                                                ? 'Primero elegí un espacio de trabajo'
-                                                : channels_loading
-                                                    ? 'Cargando canales...'
-                                                    : 'Seleccionar canal (opcional)'}
-                                        </option>
-                                        {channels.map((channel) => (
-                                            <option
-                                                key={channel.canal_id}
-                                                value={channel.canal_id}
+                                    {/* Solo el owner del espacio elegido elige el rol del invitado */}
+                                    {can_invite_admin && (
+                                        <>
+                                            <label className="invite-label" htmlFor="invite-rol">
+                                                Rol del invitado
+                                            </label>
+                                            <select
+                                                id="invite-rol"
+                                                className="invite-select"
+                                                value={invite_rol}
+                                                onChange={(event) => setInviteRol(event.target.value)}
+                                                disabled={form_disabled}
                                             >
-                                                #{channel.canal_nombre}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    {channels_error && (
-                                        <p className="invite-error">
-                                            No se pudieron cargar los canales: {channels_error}
-                                        </p>
+                                                <option value="user">Usuario</option>
+                                                <option value="admin">Admin</option>
+                                            </select>
+                                        </>
                                     )}
 
                                     {invite_error && (

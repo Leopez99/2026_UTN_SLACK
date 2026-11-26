@@ -169,7 +169,7 @@ export async function removeWorkspaceMember(workspace_id, member_id){
     return response_body
 }
 
-export async function createInvitation(workspace_id, { email, channel_id }){
+export async function createInvitation(workspace_id, { email, rol }){
     const auth_token = localStorage.getItem('auth_token')
     const response_http = await fetch(
             API_URL + `/api/workspaces/${workspace_id}/invitations`,
@@ -181,7 +181,7 @@ export async function createInvitation(workspace_id, { email, channel_id }){
                 },
                 body: JSON.stringify({
                     email: email,
-                    channel_id: channel_id || null
+                    rol: rol || 'user'
                 })
             }
         )

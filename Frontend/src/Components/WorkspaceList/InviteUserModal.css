@@ -84,6 +84,59 @@
   font-weight: 600;
 }
 
+/* Lista de espacios de trabajo con logo (radio-cards) */
+.invite-workspace-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.invite-workspace-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #e8e6ee;
+  border-radius: 8px;
+  background: #fff;
+  color: #1d1c1d;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+
+.invite-workspace-option:hover:not(:disabled) {
+  background: #f6f5f9;
+}
+
+.invite-workspace-option.selected {
+  border-color: #611f69;
+  box-shadow: 0 0 0 2px rgba(97, 31, 105, 0.15);
+}
+
+.invite-workspace-option:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.invite-workspace-logo {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.invite-workspace-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .invite-actions {
   display: flex;
   justify-content: flex-end;
@@ -131,7 +184,8 @@
 .invite-cancel:focus-visible,
 .invite-submit:focus-visible,
 .invite-input:focus-visible,
-.invite-select:focus-visible {
+.invite-select:focus-visible,
+.invite-workspace-option:focus-visible {
   outline: 2px solid #611f69;
   outline-offset: 2px;
 }

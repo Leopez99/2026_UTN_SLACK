@@ -1,9 +1,6 @@
-import mongoose from "mongoose"
 import user_repository from "../repositories/user.repository.js"
 import member_repository from "../repositories/member.repository.js"
-import channel_repository from "../repositories/channel.repository.js"
 import ServerError from "../utils/error.util.js"
-import { toChannelResponse } from "../utils/channel.util.js"
 
 /*
 Los controllers son la capa HTTP de la API:
@@ -15,19 +12,20 @@ por eso el middleware de workspace ya dejo el espacio validado en request.worksp
 y la membresia del usuario (sin importar el rol) en request.membership.
 */
 
-/* 
+/*
     (Cualquier miembro, sin importar el rol) POST /api/workspaces/:workspace_id/invitations
     Invita a un usuario registrado a sumarse al espacio de trabajo.
 
     Body:
     - email (requerido): email de un usuario ya registrado
-    - channel_id (opcional): canal del workspace al que se invita (referencia)
-
-    La invitacion agrega al usuario directo como miembro con rol 'user'.
+    - rol (opcional, default 'user'): rol con el que entra el invitado.
+        - Solo un owner puede invitar con rol 'admin'.
+        - Si invita un admin o user, el invitado entra siempre como 'user'.
+        - Nunca se puede invitar con rol 'owner'.
 */
 export async function createInvitation(request, response) {
 
-    const { email, channel_id } = request.body
+    const { email, rol } = request.body
 
     if (!email || !String(email).trim()) {
         throw new ServerError('email es un campo requerido', 400)
@@ -35,29 +33,22 @@ export async function createInvitation(request, response) {
 
     const email_invitado = String(email).trim().toLowerCase()
 
+    /* Rol del invitado: solo 'user' o 'admin', y solo el owner puede dar 'admin' */
+    const rol_invitado = rol ? String(rol).trim().toLowerCase() : 'user'
+
+    if (rol_invitado !== 'user' && rol_invitado !== 'admin') {
+        throw new ServerError("rol solo puede ser 'user' o 'admin'", 400)
+    }
+
+    if (rol_invitado === 'admin' && request.membership.rol !== 'owner') {
+        throw new ServerError('Solo el owner del espacio de trabajo puede invitar con rol admin', 403)
+    }
+
     /* El destinatario de la invitacion tiene que ser un usuario registrado */
     const user_invitado = await user_repository.getByEmail(email_invitado)
 
     if (!user_invitado) {
         throw new ServerError('El email no pertenece a un usuario registrado', 404)
-    }
-
-    /* Canal opcional: si viene, tiene que existir y pertenecer al workspace ya validado */
-    let canal = null
-
-    if (channel_id) {
-        if (!mongoose.isValidObjectId(channel_id)) {
-            throw new ServerError('Canal no encontrado', 404)
-        }
-
-        canal = await channel_repository.getById(channel_id)
-
-        const canal_del_workspace =
-            canal && String(canal.fk_id_espacio_trabajo) === String(request.workspace._id)
-
-        if (!canal_del_workspace) {
-            throw new ServerError('Canal no encontrado', 404)
-        }
     }
 
     /* Si el invitado ya es miembro del espacio, no hace falta invitarlo */
@@ -73,7 +64,7 @@ export async function createInvitation(request, response) {
     const membership_created = await member_repository.create(
         user_invitado._id,
         request.workspace._id,
-        'user'
+        rol_invitado
     )
 
     return response.status(201).send({
@@ -89,8 +80,7 @@ export async function createInvitation(request, response) {
                     id: user_invitado._id,
                     nombre: user_invitado.nombre,
                     email: user_invitado.email
-                },
-                canal: canal ? toChannelResponse(canal) : null
+                }
             }
         }
     })
