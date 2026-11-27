@@ -7,6 +7,7 @@ import useWorkspaceList from '../../hooks/useWorkspaceList'
 import logo_mark from '../../assets/Logos dislack/Logo dislack.png'
 import logo_wordmark from '../../assets/Logos dislack/Titulo dislack.png'
 import HomeBackground from '../../Components/HomeBackground/HomeBackground'
+import { IconSettings } from '../WorkspaceScreen/components/Icons'
 import { disconnectSocket } from '../../services/socketService'
 import './HomeScreen.css'
 
@@ -74,6 +75,15 @@ function HomeScreeen() {
         </div>
 
         <div className="home-topbar-actions">
+          <button
+            type="button"
+            className="home-topbar-button home-topbar-button-config"
+            onClick={() => navigate('/settings')}
+          >
+            <IconSettings size={16} />
+            Configuración
+          </button>
+
           <button
             type="button"
             className="home-topbar-button home-topbar-button-outline"

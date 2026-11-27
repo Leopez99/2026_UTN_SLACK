@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router'
 import Avatar from './Avatar'
 import workspace_default_logo from '../../../assets/Logos dislack/Logo dislack.png'
 import {
@@ -42,6 +43,9 @@ function ChannelSidebar({
   on_request_invite
 }) {
   const user_name = current_user?.name || 'Mi cuenta'
+
+  /* El engranaje de usuario manda a la pantalla de configuracion de cuenta */
+  const navigate = useNavigate()
 
   const [create_form_open, set_create_form_open] = useState(false)
   const [form_state, set_form_state] = useState({ name: '', description: '' })
@@ -325,7 +329,13 @@ function ChannelSidebar({
         </div>
 
         <div className="ws-user-actions">
-          <button type="button" className="ws-icon-button" title="Ajustes de usuario" aria-label="Ajustes de usuario">
+          <button
+            type="button"
+            className="ws-icon-button"
+            title="Configuración de cuenta"
+            aria-label="Configuración de cuenta"
+            onClick={() => navigate('/settings')}
+          >
             <IconSettings size={19} />
           </button>
         </div>

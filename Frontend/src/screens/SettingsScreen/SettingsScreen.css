@@ -1,0 +1,377 @@
+/* SettingsScreen: configuracion de la propia cuenta, con la paleta oscura
+   usada por LoginScreen y WorkspaceScreen */
+
+.settings-screen {
+  --settings-rail: #1e1f22;
+  --settings-surface: #2b2d31;
+  --settings-bg: #313338;
+  --settings-input: #383a40;
+  --settings-hover: #35373c;
+  --settings-text: #f2f3f5;
+  --settings-text-bright: #dbdee1;
+  --settings-text-muted: #949ba4;
+  --settings-accent: #5865f2;
+  --settings-accent-hover: #4752c4;
+  --settings-red: #f23f43;
+  --settings-red-hover: #d82c31;
+  --settings-divider: rgba(78, 80, 88, 0.48);
+  --settings-focus: #00a8fc;
+
+  display: flex;
+  min-height: 100vh;
+  flex-direction: column;
+  background: var(--settings-bg);
+  color: var(--settings-text);
+  font-family: var(--font-family-base);
+}
+
+.settings-screen *,
+.settings-screen *::before,
+.settings-screen *::after {
+  box-sizing: border-box;
+}
+
+.settings-screen :where(a, button, input):focus-visible {
+  outline: 2px solid var(--settings-focus);
+  outline-offset: 2px;
+}
+
+/* --- Topbar con boton de regreso --- */
+
+.settings-topbar {
+  padding: 14px 18px;
+  background: var(--settings-rail);
+  border-bottom: 1px solid var(--settings-divider);
+}
+
+.settings-back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--settings-text-muted);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.settings-back-button:hover {
+  background: var(--settings-hover);
+  color: var(--settings-text);
+}
+
+/* --- Panel central --- */
+
+.settings-panel {
+  display: grid;
+  flex: 1;
+  place-items: start center;
+  padding: clamp(24px, 6vh, 56px) 20px;
+}
+
+.settings-panel-inner {
+  display: flex;
+  width: 100%;
+  max-width: 560px;
+  flex-direction: column;
+}
+
+.settings-title {
+  margin: 0 0 6px;
+  color: var(--settings-text);
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.5px;
+}
+
+.settings-subtitle {
+  margin: 0 0 20px;
+  color: var(--settings-text-muted);
+  font-size: 14px;
+}
+
+/* --- Tarjetas de seccion --- */
+
+.settings-card {
+  margin-bottom: 16px;
+  padding: 18px;
+  border: 1px solid var(--settings-divider);
+  border-radius: 12px;
+  background: var(--settings-surface);
+}
+
+.settings-card-title {
+  margin: 0 0 14px;
+  color: var(--settings-text-bright);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.settings-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--settings-text-bright);
+  font-size: 12.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.settings-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: var(--settings-input);
+  color: var(--settings-text);
+  font-family: inherit;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.settings-input:hover {
+  background: var(--settings-hover);
+}
+
+.settings-input:focus {
+  border-color: var(--settings-accent);
+}
+
+.settings-input:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.settings-form .settings-label {
+  margin-top: 14px;
+}
+
+/* Email de solo lectura */
+.settings-input-readonly {
+  color: var(--settings-text-muted);
+}
+
+.settings-help {
+  display: block;
+  margin-top: 5px;
+  color: var(--settings-text-muted);
+  font-size: 11.5px;
+}
+
+.settings-submit {
+  display: block;
+  width: 100%;
+  margin-top: 16px;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 10px;
+  background: var(--settings-accent);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.settings-submit:hover:not(:disabled) {
+  background: var(--settings-accent-hover);
+}
+
+.settings-submit:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* --- Mensajes de exito y error --- */
+
+.settings-message {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.settings-message-error {
+  color: var(--settings-red);
+}
+
+.settings-message-success {
+  color: #23a55a;
+}
+
+/* --- Zona de peligro --- */
+
+.settings-card-danger {
+  border-color: rgba(242, 63, 67, 0.35);
+}
+
+.settings-card-danger .settings-card-title {
+  color: var(--settings-red);
+}
+
+.settings-danger-text {
+  margin: 0 0 14px;
+  color: var(--settings-text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.settings-danger-text strong {
+  color: var(--settings-text-bright);
+}
+
+.settings-delete-button {
+  padding: 10px 16px;
+  border: none;
+  border-radius: 10px;
+  background: var(--settings-red);
+  color: #fff;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.settings-delete-button:hover:not(:disabled) {
+  background: var(--settings-red-hover);
+}
+
+/* --- Modal de confirmacion --- */
+
+.settings-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(29, 28, 29, 0.5);
+}
+
+.settings-modal-card {
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  padding: 22px;
+  border-radius: 12px;
+  background: var(--settings-surface);
+  box-shadow: 0 20px 48px rgba(10, 10, 12, 0.45);
+}
+
+.settings-modal-title {
+  margin: 0 0 10px;
+  color: var(--settings-text);
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.settings-modal-text {
+  margin: 0 0 14px;
+  color: var(--settings-text-muted);
+  font-size: 13.5px;
+  line-height: 1.55;
+}
+
+.settings-modal-text strong {
+  color: var(--settings-text-bright);
+}
+
+/* Bloque rojo con los espacios en riesgo */
+.settings-modal-warning {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 6px;
+  padding: 12px 14px;
+  border: 1px solid rgba(242, 63, 67, 0.35);
+  border-radius: 10px;
+  background: rgba(242, 63, 67, 0.08);
+  color: var(--settings-text-bright);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.settings-modal-warning-title {
+  font-weight: 700;
+}
+
+.settings-modal-warning-loading {
+  color: var(--settings-text-muted);
+}
+
+.settings-modal-workspace-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding-left: 18px;
+}
+
+.settings-modal-workspace-list li {
+  color: var(--settings-text-bright);
+  font-weight: 600;
+}
+
+.settings-modal-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.settings-modal-cancel,
+.settings-modal-confirm {
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+
+.settings-modal-cancel {
+  border: 1px solid var(--settings-divider);
+  background: transparent;
+  color: var(--settings-text);
+}
+
+.settings-modal-cancel:hover:not(:disabled) {
+  background: var(--settings-hover);
+}
+
+.settings-modal-confirm {
+  border: none;
+  background: var(--settings-red);
+  color: #fff;
+}
+
+.settings-modal-confirm:hover:not(:disabled) {
+  background: var(--settings-red-hover);
+}
+
+.settings-modal-cancel:disabled,
+.settings-modal-confirm:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 480px) {
+  .settings-panel {
+    padding: 20px 14px;
+  }
+
+  .settings-card {
+    padding: 14px;
+  }
+}

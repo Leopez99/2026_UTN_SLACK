@@ -1,7 +1,29 @@
 import express from 'express'
-import { getUserById, getUsers } from '../controllers/user.controller.js'
+import { getUserById, getUsers, updateMe, deleteMe } from '../controllers/user.controller.js'
+import authMiddleware from '../middlewares/auth.middleware.js'
 
 const user_router = express.Router()
+
+/* 
+(Authenticated) PUT /api/users/me
+    Cambiar el nombre del propio usuario. Devuelve el usuario actualizado
+    y un token nuevo firmado con ese nombre
+*/
+user_router.put(
+    '/me',
+    authMiddleware,
+    updateMe
+)
+
+/* 
+(Authenticated) DELETE /api/users/me
+    Borrar la cuenta definitivamente (con sus espacios propios en cascada)
+*/
+user_router.delete(
+    '/me',
+    authMiddleware,
+    deleteMe
+)
 
 /* 
 (Unauthentified) GET /api/users

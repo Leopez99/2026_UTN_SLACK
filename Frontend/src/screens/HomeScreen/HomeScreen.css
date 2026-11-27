@@ -111,6 +111,25 @@
   outline-offset: 2px;
 }
 
+/* Boton de configuracion (engranaje + texto, alineados) */
+.home-topbar-button-config {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+.home-topbar-button-config svg {
+  flex-shrink: 0;
+}
+
+.home-topbar-button-config:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.7);
+}
+
 /* --- Hero (sobre fondo blanco, sin bloque violeta) --- */
 
 .home-hero {

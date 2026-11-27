@@ -14,6 +14,19 @@ class MemberRepository {
         return await Member.findById(memberId)
     }
 
+    //Traer las membresias crudas de un usuario (sin populate)
+    async getAllByUserId(user_id) {
+        return await Member.find({ fk_id_usuario: user_id })
+    }
+
+    //Contar cuantos owners tiene un espacio de trabajo
+    async countOwnersByWorkspaceId(workspace_id) {
+        return await Member.countDocuments({
+            fk_id_espacio_trabajo: workspace_id,
+            rol: 'owner'
+        })
+    }
+
     async deleteById(memberId) {
         await Member.findByIdAndDelete(memberId)
     }
@@ -89,6 +102,11 @@ class MemberRepository {
     //Borrar las membresias de un espacio de trabajo
     async deleteAllMembershipsByWorkspaceId(workspace_id){
         await Member.deleteMany({fk_id_espacio_trabajo: workspace_id})
+    }
+
+    //Borrar todas las membresias de un usuario
+    async deleteAllByUserId(user_id){
+        await Member.deleteMany({fk_id_usuario: user_id})
     }
 
     

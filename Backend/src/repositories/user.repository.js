@@ -75,7 +75,8 @@ class UserRepository {
     async updateById (user_id, update_data) {
         return await User.findByIdAndUpdate(
             user_id,
-            update_data
+            update_data,
+            { new: true } //Devuelve el documento ya actualizado
         )
     }
     

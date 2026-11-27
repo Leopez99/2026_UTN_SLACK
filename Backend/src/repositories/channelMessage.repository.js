@@ -40,6 +40,17 @@ class ChannelMessageRepository {
 
         await ChannelMessage.deleteMany({ fk_canal_id: { $in: channel_ids } })
     }
+
+    /* Los mensajes referencian al autor por su membresia (Miembro), no por
+       su usuario. Este metodo borra todos los mensajes escritos por las
+       membresias indicadas (se usa al eliminar una cuenta definitivamente). */
+    async deleteAllByMemberIds(member_ids = []) {
+        if (member_ids.length === 0) {
+            return
+        }
+
+        await ChannelMessage.deleteMany({ fk_miembro_id: { $in: member_ids } })
+    }
 }
 
 const channel_message_repository = new ChannelMessageRepository()
