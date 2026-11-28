@@ -1,13 +1,13 @@
 import ChannelMessage from "../models/channelMessage.model.js"
 
 /* Populate del autor: el mensaje referencia a la membresia (Miembro) y esta
-   al usuario, que es quien tiene el nombre visible. */
+   al usuario, que es quien tiene el nombre y la foto de perfil visibles. */
 const AUTHOR_POPULATE = {
     path: 'fk_miembro_id',
     select: 'fk_id_usuario rol',
     populate: {
         path: 'fk_id_usuario',
-        select: 'nombre'
+        select: 'nombre foto_perfil'
     }
 }
 

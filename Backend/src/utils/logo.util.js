@@ -45,3 +45,25 @@ export function validateWorkspaceLogo(logo) {
 
     return null
 }
+
+/*
+Validacion de la foto de perfil del usuario.
+Mismas reglas que el logo de un espacio (data URL base64 de hasta 200 KB):
+viaja dentro del body JSON y se guarda en MongoDB junto al resto del Usuario.
+*/
+export const PROFILE_PHOTO_ERROR_MESSAGE = 'foto_perfil debe ser una imagen en formato data URL base64 (PNG, JPG o WebP)'
+export const PROFILE_PHOTO_TOO_LARGE_MESSAGE = 'foto_perfil no puede superar los 200 KB'
+
+export function validateProfilePhoto(foto_perfil) {
+    const mensaje = validateWorkspaceLogo(foto_perfil)
+
+    if (mensaje === LOGO_ERROR_MESSAGE) {
+        return PROFILE_PHOTO_ERROR_MESSAGE
+    }
+
+    if (mensaje === LOGO_TOO_LARGE_MESSAGE) {
+        return PROFILE_PHOTO_TOO_LARGE_MESSAGE
+    }
+
+    return mensaje
+}

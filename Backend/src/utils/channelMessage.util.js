@@ -13,7 +13,8 @@ export function toChannelMessageResponse(message) {
         fecha_creacion: message.fecha_creacion,
         autor: {
             member_id: author_member?._id ?? author_member,
-            nombre: author_member?.fk_id_usuario?.nombre ?? 'Usuario'
+            nombre: author_member?.fk_id_usuario?.nombre ?? 'Usuario',
+            foto_perfil: author_member?.fk_id_usuario?.foto_perfil ?? null
         }
     }
 }

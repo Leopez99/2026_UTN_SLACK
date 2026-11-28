@@ -176,6 +176,8 @@ const openapi_document = {
                 description: [
                     'Crea un usuario con la contraseña encriptada (bcrypt) y envía un email de verificación con un token válido por 7 días.',
                     '',
+                    'Acepta además una `descripcion` (bio, máx. 160 caracteres) y una `foto_perfil` (data URL base64, máx. ~200 KB), ambas opcionales.',
+                    '',
                     'El usuario queda con `email_verificado: false` hasta que use el enlace del mail, por lo que todavía no puede iniciar sesión.'
                 ].join('\n'),
                 requestBody: {
@@ -186,7 +188,9 @@ const openapi_document = {
                             example: {
                                 username: 'maria',
                                 email: 'maria@mail.com',
-                                password: 'pepe123'
+                                password: 'pepe123',
+                                descripcion: 'Backend developer en formación',
+                                foto_perfil: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg...'
                             }
                         }
                     )
@@ -206,7 +210,10 @@ const openapi_document = {
                         [
                             ['campos_faltantes', 400, 'Email, password and username is required'],
                             ['email_invalido', 400, 'Email is incorrect'],
-                            ['generico_registro', 400, 'Sucedio un error al tratar de crear su cuenta']
+                            ['generico_registro', 400, 'Sucedio un error al tratar de crear su cuenta'],
+                            ['descripcion_larga', 400, 'descripcion no puede superar los 160 caracteres'],
+                            ['foto_invalida', 400, 'foto_perfil debe ser una imagen en formato data URL base64 (PNG, JPG o WebP)'],
+                            ['foto_grande', 400, 'foto_perfil no puede superar los 200 KB']
                         ]
                     ),
                     500: INTERNAL_ERROR[500],
@@ -526,6 +533,134 @@ const openapi_document = {
                                 ]
                             }
                         }
+                    ),
+                    500: INTERNAL_ERROR[500],
+                    503: DATABASE_ERROR[503]
+                }
+            }
+        },
+
+        '/api/users/me': {
+            get: {
+                tags: ['Users'],
+                summary: 'Obtener el perfil del usuario autenticado',
+                operationId: 'getMe',
+                description: [
+                    'Devuelve el perfil completo del usuario dueño del token, incluyendo `foto_perfil` y `descripcion`.',
+                    '',
+                    'Estos datos no viajan dentro del JWT (el payload queda acotado a `id`, `name` y `email`), por lo que esta es la forma de traerlos.'
+                ].join('\n'),
+                security: [{ bearerAuth: [] }],
+                responses: {
+                    200: success_response(
+                        'Perfil del usuario autenticado.',
+                        { $ref: '#/components/schemas/GetMeResponse' }
+                    ),
+                    400: AUTH_ERRORS[400],
+                    401: AUTH_ERRORS[401],
+                    404: error_response(
+                        'El usuario del token ya no existe.',
+                        [
+                            ['usuario_no_encontrado', 404, 'User not found']
+                        ]
+                    ),
+                    500: INTERNAL_ERROR[500],
+                    503: DATABASE_ERROR[503]
+                }
+            },
+
+            put: {
+                tags: ['Users'],
+                summary: 'Actualizar la propia cuenta',
+                operationId: 'updateMe',
+                description: [
+                    'Cambia el `name` (obligatorio) y, opcionalmente, la `descripcion` y la `foto_perfil` del usuario autenticado.',
+                    '',
+                    'Devuelve el usuario actualizado y un JWT nuevo re-firmado con el nombre actualizado (la sesión no necesita re-login).',
+                    '',
+                    'Semántica de `foto_perfil`: data URL reemplaza, `null` quita la foto, campo omitido la conserva. `descripcion` con campo omitido también se conserva.'
+                ].join('\n'),
+                security: [{ bearerAuth: [] }],
+                requestBody: {
+                    required: true,
+                    content: json_content(
+                        { $ref: '#/components/schemas/UpdateMeRequest' },
+                        {
+                            example: {
+                                name: 'María García',
+                                descripcion: 'Backend developer en formación',
+                                foto_perfil: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg...'
+                            }
+                        }
+                    )
+                },
+                responses: {
+                    200: success_response(
+                        'Perfil actualizado con el token re-firmado.',
+                        { $ref: '#/components/schemas/UpdateMeResponse' }
+                    ),
+                    400: error_response(
+                        '`name` faltante o vacío, `name` mayor a 60 caracteres, `descripcion` mayor a 160, o `foto_perfil` inválida.',
+                        [
+                            ['name_faltante', 400, 'name es un campo requerido'],
+                            ['name_largo', 400, 'name no puede superar los 60 caracteres'],
+                            ['descripcion_larga', 400, 'descripcion no puede superar los 160 caracteres'],
+                            ['foto_invalida', 400, 'foto_perfil debe ser una imagen en formato data URL base64 (PNG, JPG o WebP)'],
+                            ['foto_grande', 400, 'foto_perfil no puede superar los 200 KB']
+                        ]
+                    ),
+                    401: AUTH_ERRORS[401],
+                    404: error_response(
+                        'El usuario del token no existe o está desactivado.',
+                        [
+                            ['usuario_no_encontrado', 404, 'Usuario no encontrado']
+                        ]
+                    ),
+                    500: INTERNAL_ERROR[500],
+                    503: DATABASE_ERROR[503]
+                }
+            },
+
+            delete: {
+                tags: ['Users'],
+                summary: 'Borrar la cuenta del usuario autenticado',
+                operationId: 'deleteMe',
+                description: [
+                    'Borra la cuenta DEFINITIVAMENTE con borrado en cascada:',
+                    '',
+                    '- Los espacios donde el usuario es el ÚNICO owner se eliminan por completo (canales, mensajes y membresías de todos sus integrantes).',
+                    '- En espacios ajenos se borran solo sus mensajes y su membresía; el espacio y los demás miembros quedan intactos.',
+                    '',
+                    'El body no lleva datos; el endpoint responde con `data.workspaces_deleted` (lista de ids de espacios eliminados).'
+                ].join('\n'),
+                security: [{ bearerAuth: [] }],
+                responses: {
+                    200: success_response(
+                        'Cuenta eliminada.',
+                        { $ref: '#/components/schemas/SuccessfulMessageResponse' },
+                        {
+                            ok: true,
+                            status: 200,
+                            message: 'Cuenta eliminada correctamente',
+                            data: {
+                                account_deleted: true,
+                                user_deleted: {
+                                    id: '6aabff9a190ff6061955c889',
+                                    nombre: 'maria',
+                                    email: 'maria@mail.com'
+                                },
+                                workspaces_deleted: [
+                                    { workspace_id: '6ab01f9a190ff6061955c88a' }
+                                ]
+                            }
+                        }
+                    ),
+                    401: AUTH_ERRORS[401],
+                    404: error_response(
+                        'El usuario no existe.',
+                        [
+                            ['usuario_no_encontrado', 404, 'Usuario no encontrado']
+                        ]
                     ),
                     500: INTERNAL_ERROR[500],
                     503: DATABASE_ERROR[503]
@@ -1463,6 +1598,15 @@ const openapi_document = {
                         format: 'password',
                         description: 'Contraseña en texto plano. Se guarda encriptada con bcrypt. El registro no exige un mínimo de caracteres.',
                         example: 'pepe123'
+                    },
+                    descripcion: {
+                        type: 'string',
+                        maxLength: 160,
+                        description: 'Descripción corta del perfil (bio). Opcional; se guarda con trim y vacía si no se envía.',
+                        example: 'Backend developer en formación'
+                    },
+                    foto_perfil: {
+                        $ref: '#/components/schemas/ProfilePhotoField'
                     }
                 }
             },
@@ -1574,6 +1718,94 @@ const openapi_document = {
                             'Con `null` se elimina el logo actual; si se omite el campo, el logo se conserva.'
                         ].join('\n'),
                         example: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg...'
+                    }
+                }
+            },
+
+            ProfilePhotoField: {
+                type: 'string',
+                description: [
+                    'Foto de perfil como data URL base64 (`data:image/png;base64,<datos>`).',
+                    'Tipos aceptados: PNG (`data:image/png`), JPG (`data:image/jpeg`) y WebP (`data:image/webp`).',
+                    'Máximo ~200 KB una vez decodificados los datos base64 (el frontend la recorta a 256x256 antes de enviarla).',
+                    'Al registrarse, omitir el campo o enviar `null` significa sin foto.'
+                ].join('\n'),
+                example: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUg...'
+            },
+
+            UpdateMeRequest: {
+                type: 'object',
+                required: ['name'],
+                description: [
+                    '`name` es obligatorio; el controller responde `400` si falta.',
+                    '',
+                    '`descripcion` es opcional (máx. 160 caracteres): si no se envía se conserva la actual, si se envía se reemplaza (trim incluido).',
+                    '',
+                    '`foto_perfil` es opcional con 3 estados: si se envía un data URL reemplaza la foto actual, con `null` se quita, y si se omite el campo se conserva.'
+                ].join('\n'),
+                properties: {
+                    name: {
+                        type: 'string',
+                        maxLength: 60,
+                        example: 'María García'
+                    },
+                    descripcion: {
+                        type: 'string',
+                        maxLength: 160,
+                        description: 'Descripción corta del perfil (bio). Opcional: si no se envía se conserva la actual.',
+                        example: 'Backend developer en formación'
+                    },
+                    foto_perfil: {
+                        $ref: '#/components/schemas/ProfilePhotoField'
+                    }
+                }
+            },
+
+            UpdateMeResponse: {
+                type: 'object',
+                properties: {
+                    ok: { type: 'boolean', example: true },
+                    status: { type: 'integer', example: 200 },
+                    message: { type: 'string', example: 'Perfil actualizado correctamente' },
+                    data: {
+                        type: 'object',
+                        properties: {
+                            user_updated: {
+                                type: 'object',
+                                properties: {
+                                    id: { type: 'string', example: '6aabff9a190ff6061955c889' },
+                                    nombre: { type: 'string', example: 'María García' },
+                                    email: { type: 'string', example: 'maria@mail.com' },
+                                    foto_perfil: { type: 'string', nullable: true, example: null },
+                                    descripcion: { type: 'string', example: 'Backend developer en formación' }
+                                }
+                            },
+                            auth_token: { type: 'string', example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' }
+                        }
+                    }
+                }
+            },
+
+            GetMeResponse: {
+                type: 'object',
+                properties: {
+                    ok: { type: 'boolean', example: true },
+                    status: { type: 'integer', example: 200 },
+                    message: { type: 'string', example: 'Perfil obtenido correctamente' },
+                    data: {
+                        type: 'object',
+                        properties: {
+                            user: {
+                                type: 'object',
+                                properties: {
+                                    id: { type: 'string', example: '6aabff9a190ff6061955c889' },
+                                    nombre: { type: 'string', example: 'María García' },
+                                    email: { type: 'string', example: 'maria@mail.com' },
+                                    foto_perfil: { type: 'string', nullable: true, description: 'Data URL base64 de la foto de perfil, o `null` si no tiene.' },
+                                    descripcion: { type: 'string', example: 'Backend developer en formación' }
+                                }
+                            }
+                        }
                     }
                 }
             },

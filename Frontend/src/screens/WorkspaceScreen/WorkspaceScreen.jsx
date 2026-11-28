@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router'
 import useWorkspaceScreen from '../../hooks/useWorkspaceScreen'
 import useWorkspaceChannels from '../../hooks/useWorkspaceChannels'
 import useChannelRealtime from '../../hooks/useChannelRealtime'
+import useMyProfile from '../../hooks/useMyProfile'
 import { getSessionUser } from '../../utils/session.util'
 import { findDefaultChannel, groupChannelsByCategory } from '../../utils/channel.util'
 import { createChannel, createChannelMessage, deleteChannel, getChannelMessages } from '../../services/channelsService'
@@ -239,6 +240,12 @@ function WorkspaceScreen() {
   const workspaces = workspaces_response?.data?.workspaces ?? []
 
   const current_user = getSessionUser()
+
+  /* Foto de perfil del usuario (no viaja en el JWT): se trae con GET
+     /api/users/me y se muestra en la barra inferior del sidebar. Al volver
+     de /settings la screen se re-monta y el hook refresca la foto nueva */
+  const { profile: my_profile } = useMyProfile()
+
   const current_membership = workspaces.find(
     (workspace) => String(workspace.workspace_id) === String(workspace_id)
   )
@@ -501,6 +508,7 @@ function WorkspaceScreen() {
         workspace_name={workspace_selected.nombre}
         workspace_logo={workspace_selected.logo ?? null}
         current_user={current_user}
+        current_user_avatar={my_profile.foto_perfil}
         channel_groups={channel_groups}
         active_channel_id={active_channel?.canal_id ?? null}
         channels_loading={channels_loading}

@@ -3,7 +3,8 @@ La capa de SERVICIOS contiene la logica de negocio de cada endpoint:
 aqui viven las validaciones, las reglas y los flujos de la aplicacion.
 
 Configuracion de la propia cuenta:
-- updateOwnProfile: cambia el nombre del usuario logueado y re-emite el JWT
+- updateOwnProfile: cambia el nombre (y descripcion/foto de perfil) del usuario
+  logueado y re-emite el JWT
   (el payload del token guarda el nombre, si no se re-emite quedaría viejo)
 - deleteOwnAccount: borra la cuenta DEFINITIVAMENTE con borrado en cascada:
   ~ Los espacios donde el usuario es el UNICO owner se eliminan por completo
@@ -20,6 +21,7 @@ import workspace_repository from "../repositories/workspace.repository.js"
 import channel_repository from "../repositories/channel.repository.js"
 import channel_message_repository from "../repositories/channelMessage.repository.js"
 import ServerError from "../utils/error.util.js"
+import { validateProfilePhoto } from "../utils/logo.util.js"
 
 /* Firma una credencial de sesion con el mismo payload que usa el login */
 function signAuthToken(user) {
@@ -34,12 +36,19 @@ function signAuthToken(user) {
 }
 
 /*
-Cambio de nombre del propio usuario:
-1. Valida el nombre recibido
-2. Verifica que el usuario exista y este activo
-3. Actualiza el nombre y firma un token nuevo con el nombre actualizado
+Cambio de datos del propio usuario (nombre, descripcion y foto de perfil):
+1. Valida el nombre y la descripcion recibidos
+2. Valida la foto: si viene tiene que ser una data URL base64 (PNG/JPG/WebP)
+   de hasta 200 KB. Semantica de 3 estados igual que el logo de workspace:
+   ~ foto_perfil omitido -> se conserva la actual
+   ~ foto_perfil: null   -> se quita la foto
+   ~ foto_perfil: "data..." -> reemplaza la foto
+3. Verifica que el usuario exista y este activo
+4. Actualiza los campos y firma un token nuevo con el nombre actualizado
+   (la foto y la descripcion NO viajan en el JWT: quedan solo en DB y la
+   config se las trae con GET /api/users/me)
 */
-export async function updateOwnProfile(user_id, name) {
+export async function updateOwnProfile(user_id, { name, descripcion, foto_perfil }) {
 
     if (!name || typeof name !== 'string' || !name.trim()) {
         throw new ServerError('name es un campo requerido', 400)
@@ -51,17 +60,45 @@ export async function updateOwnProfile(user_id, name) {
         throw new ServerError('name no puede superar los 60 caracteres', 400)
     }
 
+    /* La descripcion es opcional: si viene se acota a 160 caracteres.
+       `undefined` significa "no toco la descripcion" y se conserva la actual */
+    let descripcion_actual
+
+    if (descripcion !== undefined) {
+        descripcion_actual = typeof descripcion === 'string' ? descripcion.trim() : ''
+
+        if (descripcion_actual.length > 160) {
+            throw new ServerError('descripcion no puede superar los 160 caracteres', 400)
+        }
+    }
+
+    const foto_error = validateProfilePhoto(foto_perfil)
+    if (foto_error) {
+        throw new ServerError(foto_error, 400)
+    }
+
     const user = await user_repository.getById(user_id)
 
     if (!user || !user.activo) {
         throw new ServerError('Usuario no encontrado', 404)
     }
 
+    const update_data = {
+        nombre: new_name
+    }
+
+    if (descripcion !== undefined) {
+        update_data.descripcion = descripcion_actual
+    }
+
+    /* Solo se toca la foto si el campo vino en el body (omitido = conserva) */
+    if (foto_perfil !== undefined) {
+        update_data.foto_perfil = foto_perfil ?? null
+    }
+
     const user_updated = await user_repository.updateById(
         user_id,
-        {
-            nombre: new_name
-        }
+        update_data
     )
 
     const auth_token = signAuthToken(user_updated)

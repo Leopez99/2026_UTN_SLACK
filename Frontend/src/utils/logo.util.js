@@ -4,6 +4,10 @@ Procesamiento del logo de un espacio de trabajo en el navegador.
 La imagen elegida se recorta a un cuadrado de 256x256 (ajustando la imagen
 de fondo como "cover") y se convierte a data URL base64, que es el formato
 que espera el backend para guardarlo en MongoDB.
+
+El mismo procesamiento se reutiliza para la foto de perfil del usuario
+(RegistroScreen y SettingsScreen): el backend aplica las mismas reglas de
+formato y peso, por lo que un alias con nombre mas claro se exporta abajo.
 */
 
 const LOGO_ALLOWED_TYPES = ['image/png', 'image/jpeg', 'image/webp']
@@ -87,3 +91,9 @@ export async function readImageAsLogoDataUrl(file) {
         URL.revokeObjectURL(object_url)
     }
 }
+
+/*
+Alias para usar el mismo recorte cuando la imagen es una foto de perfil de
+usuario (mismo formato data URL base64 de 256x256 que espera el backend).
+*/
+export const readImageAsAvatarDataUrl = readImageAsLogoDataUrl

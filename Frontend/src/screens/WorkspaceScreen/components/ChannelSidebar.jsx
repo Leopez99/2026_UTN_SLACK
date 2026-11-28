@@ -15,8 +15,8 @@ import {
 
 /*
 Sidebar de canales del espacio de trabajo activo.
-Los canales salen de la API; el nombre del espacio y el usuario de la barra
-inferior tambien son datos reales.
+Los canales salen de la API; el nombre y la foto del usuario en la barra
+inferior tambien son datos reales (la foto viaja por separado del JWT).
 
 En pantallas chicas se muestra como drawer, por eso recibe is_open/on_close.
 Crear y borrar canales solo esta disponible para owner/admin (el backend
@@ -26,6 +26,7 @@ function ChannelSidebar({
   workspace_name = 'Espacio de trabajo',
   workspace_logo = null,
   current_user,
+  current_user_avatar = null,
   channel_groups = [],
   active_channel_id,
   channels_loading = false,
@@ -319,7 +320,14 @@ function ChannelSidebar({
       </div>
 
       <footer className="ws-user-bar">
-        <Avatar name={user_name} size="sm" status="online" />
+        {/* La foto de perfil viaja aparte del JWT (current_user_avatar, traida
+            con GET /api/users/me): sin foto se muestran las iniciales */}
+        <Avatar
+          name={user_name}
+          src={current_user_avatar ?? null}
+          size="sm"
+          status="online"
+        />
 
         <div className="ws-user-meta">
           <span className="ws-user-name" title={current_user?.email}>

@@ -493,3 +493,97 @@
     margin-top: 0;
   }
 }
+
+/*
+Foto de perfil del registro: circulo de preview (con iniciales mientras no
+haya foto) + acciones para elegir, cambiar o quitar la imagen.
+*/
+
+.register-photo-field {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.register-photo-preview {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  padding: 0;
+  border: 2px dashed rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+  background: transparent;
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s ease;
+}
+
+.register-photo-preview:hover {
+  border-color: var(--login-accent);
+}
+
+.register-photo-preview span {
+  color: var(--login-text);
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.register-photo-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.register-photo-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.register-photo-action {
+  padding: 7px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: var(--login-input);
+  color: var(--login-text-bright);
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.register-photo-action:hover {
+  background: var(--login-hover);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.register-photo-action--remove:hover {
+  border-color: var(--login-red);
+  color: var(--login-red);
+}
+
+.register-photo-action + input[type="file"] {
+  display: none;
+}
+
+/* Descripcion (bio) del registro: textarea con la estetica de login-input */
+
+.login-textarea {
+  height: auto;
+  min-height: 64px;
+  padding: 10px 14px;
+  resize: vertical;
+  font-family: inherit;
+  line-height: 1.4;
+}
+
+.login-char-count {
+  align-self: flex-end;
+  margin-top: -8px;
+  font-size: 11px;
+  color: var(--login-text-faint);
+}

@@ -78,7 +78,7 @@ class MemberRepository {
     async getAllMembershipsByWorkspaceId(workspace_id) {
         const result = await Member
             .find({ fk_id_espacio_trabajo: workspace_id })
-            .populate('fk_id_usuario', 'nombre email')
+            .populate('fk_id_usuario', 'nombre email foto_perfil descripcion')
 
         return result.map(membership => {
             return {
@@ -88,7 +88,9 @@ class MemberRepository {
                 usuario: {
                     id: membership.fk_id_usuario._id,
                     nombre: membership.fk_id_usuario.nombre,
-                    email: membership.fk_id_usuario.email
+                    email: membership.fk_id_usuario.email,
+                    foto_perfil: membership.fk_id_usuario.foto_perfil ?? null,
+                    descripcion: membership.fk_id_usuario.descripcion ?? ''
                 }
             }
         })

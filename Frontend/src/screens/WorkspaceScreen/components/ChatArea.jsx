@@ -60,6 +60,9 @@ function buildTimeline(messages) {
   messages.forEach((message) => {
     const day_key = getDayKey(message.fecha_creacion)
     const author_name = message.autor?.nombre || 'Usuario'
+    // Identificador único del autor: member_id (nombre solo como fallback).
+    // Evita agrupar mensajes de usuarios distintos que comparten el mismo nombre.
+    const author_id = message.autor?.member_id ?? author_name
     const message_time = new Date(message.fecha_creacion).getTime()
 
     if (!previous_message || previous_message.day_key !== day_key) {
@@ -74,7 +77,7 @@ function buildTimeline(messages) {
     const grouped =
       Boolean(previous_message) &&
       previous_message.day_key === day_key &&
-      previous_message.author_name === author_name &&
+      previous_message.author_id === author_id &&
       elapsed >= 0 &&
       elapsed < GROUP_WINDOW_MS
 
@@ -87,6 +90,7 @@ function buildTimeline(messages) {
 
     previous_message = {
       day_key,
+      author_id,
       author_name,
       time: message_time
     }
@@ -288,7 +292,7 @@ function ChatArea({
               >
                 {grouped
                   ? <span className="ws-message-avatar-slot" aria-hidden="true" />
-                  : <Avatar className="ws-message-avatar" name={author_name} size="md" />
+                  : <Avatar className="ws-message-avatar" name={author_name} src={message.autor?.foto_perfil ?? null} size="md" />
                 }
 
                 <div className="ws-message-body">

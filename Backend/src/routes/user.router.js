@@ -1,13 +1,25 @@
 import express from 'express'
-import { getUserById, getUsers, updateMe, deleteMe } from '../controllers/user.controller.js'
+import { getUserById, getUsers, getMe, updateMe, deleteMe } from '../controllers/user.controller.js'
 import authMiddleware from '../middlewares/auth.middleware.js'
 
 const user_router = express.Router()
 
-/* 
+/*
+(Authenticated) GET /api/users/me
+    Perfil completo del usuario de la sesion, con foto_perfil y descripcion
+    (esos datos no viajan dentro del JWT)
+*/
+user_router.get(
+    '/me',
+    authMiddleware,
+    getMe
+)
+
+/*
 (Authenticated) PUT /api/users/me
-    Cambiar el nombre del propio usuario. Devuelve el usuario actualizado
-    y un token nuevo firmado con ese nombre
+    Cambiar el nombre del propio usuario y, opcionalmente, la descripcion y
+    la foto de perfil. Devuelve el usuario actualizado y un token nuevo
+    firmado con ese nombre
 */
 user_router.put(
     '/me',

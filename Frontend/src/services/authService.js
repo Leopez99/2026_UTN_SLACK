@@ -32,7 +32,23 @@ JSON.stringify sirve para transformar un Objeto de JS en un JSON
 */
 
 
-export async function  register(username, email, password) {
+export async function register(username, email, password, descripcion = '', foto_perfil = null) {
+    /*
+    La descripcion y la foto de perfil son opcionales: la foto solo se envia
+    si el usuario eligio una (data URL base64 de 256x256, igual que el logo de
+    un workspace); si no, se envia null para indicar "sin foto".
+    */
+    const body = {
+        username: username,
+        email: email,
+        password: password,
+        descripcion: descripcion
+    }
+
+    if (foto_perfil) {
+        body.foto_perfil = foto_perfil
+    }
+
     const response_http = await fetch(
         API_URL + '/api/auth/register',
         {
@@ -40,16 +56,12 @@ export async function  register(username, email, password) {
             headers: {
                 'Content-Type': "application/json"
             },
-            body: JSON.stringify({
-                username: username,
-                email: email,
-                password: password
-            })
+            body: JSON.stringify(body)
         }
     )
     //Leemos el cuerpo de la respuesta como un JSON
     const response_body = await response_http.json()
-    
+
     if(!response_body.ok){
         throw new Error(response_body.message)
     }

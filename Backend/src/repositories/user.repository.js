@@ -8,8 +8,14 @@ import User from "../models/user.model.js"
 
 class UserRepository {
 
-    async create(nombre, email, password) {
-        await User.create({ nombre: nombre, email: email, password: password })
+    async create(nombre, email, password, foto_perfil = null, descripcion = '') {
+        await User.create({
+            nombre: nombre,
+            email: email,
+            password: password,
+            foto_perfil: foto_perfil,
+            descripcion: descripcion
+        })
     }
     //MONGO DB
     async get() {

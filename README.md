@@ -85,4 +85,17 @@ workspace antes de abrir el stream y antes de guardar un mensaje.
 - SSE solo empuja del servidor al cliente: para este flujo alcanza, y no hace
   falta sostener el upgrade de WebSockets.
 
+## Agrupado de mensajes en el chat
+
+El chat agrupa mensajes consecutivos del mismo autor (hasta 7 minutos), como
+hace Discord: solo el primer mensaje muestra el header con nombre, hora y avatar.
+
+Para identificar al autor **no se usa el nombre**, porque no es único (dos
+usuarios distintos pueden llamarse "Leo" y se agruparían bajo un solo header
+como si uno solo hubiera escrito ambos mensajes); se usa el `member_id` único
+que el backend incluye en cada mensaje
+(`Backend/src/utils/channelMessage.util.js`, `toChannelMessageResponse`).
+El agrupado se hace en `buildTimeline()` de
+`Frontend/src/screens/WorkspaceScreen/components/ChatArea.jsx`.
+
 

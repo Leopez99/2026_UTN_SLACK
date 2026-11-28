@@ -180,8 +180,21 @@ function MembersPanel({
                   const removing = removing_member_id === member_id_string
 
                   return (
-                    <li className="ws-member" key={member.member_id} title={member.usuario?.email}>
-                      <Avatar name={member_name} size="sm" status={getMemberStatus(member)} />
+                    <li
+                      className="ws-member"
+                      key={member.member_id}
+                      title={
+                        member.usuario?.descripcion
+                          ? `${member_name} — ${member.usuario.descripcion}`
+                          : member.usuario?.email
+                      }
+                    >
+                      <Avatar
+                        name={member_name}
+                        src={member.usuario?.foto_perfil ?? null}
+                        size="sm"
+                        status={getMemberStatus(member)}
+                      />
 
                       <div className="ws-member-info">
                         <span className="ws-member-name">{member_name}</span>

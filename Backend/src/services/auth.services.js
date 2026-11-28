@@ -14,15 +14,17 @@ import { compareHash, generateHash } from "../utils/bcrypt.util.js"
 import ServerError from "../utils/error.util.js"
 import { buildVerificationEmailHtml, buildVerificationEmailText } from "../utils/email-templates/verification.email.js"
 import { buildPasswordResetEmailHtml, buildPasswordResetEmailText } from "../utils/email-templates/reset-password.email.js"
+import { validateProfilePhoto } from "../utils/logo.util.js"
 
 /*
 Registro de usuario:
-1. Valida los datos recibidos
+1. Valida los datos recibidos (incluyendo la descripcion y foto de perfil
+   opcionales que el usuario pueda cargar)
 2. Verifica que el email no este registrado
 3. Guarda al usuario con la password encriptada (hash irreversible)
 4. Genera un token de verificacion de email (valido por 7 dias) y envia el mail
 */
-export async function register(username, email, password) {
+export async function register(username, email, password, descripcion = '', foto_perfil = null) {
 
     if (!username || !email || !password) {
         throw new ServerError(
@@ -36,6 +38,21 @@ export async function register(username, email, password) {
             "Email is incorrect",
             400
         )
+    }
+
+    /* La descripcion del perfil es opcional: si viene se acota a 160 caracteres
+       (trim para quitar espacios de sobra en los bordes) */
+    const descripcion_limpia = typeof descripcion === 'string' ? descripcion.trim() : ''
+
+    if (descripcion_limpia.length > 160) {
+        throw new ServerError('descripcion no puede superar los 160 caracteres', 400)
+    }
+
+    /* La foto de perfil es opcional: si viene tiene que ser una data URL
+       base64 (PNG/JPG/WebP) de hasta 200 KB, igual que el logo de workspace */
+    const foto_error = validateProfilePhoto(foto_perfil)
+    if (foto_error) {
+        throw new ServerError(foto_error, 400)
     }
 
     //Validar si el mail ya esta registrado
@@ -57,7 +74,7 @@ export async function register(username, email, password) {
     */
     const password_hash = await generateHash(password)
 
-    await user_repository.create(username, email, password_hash)
+    await user_repository.create(username, email, password_hash, foto_perfil ?? null, descripcion_limpia)
 
     const verify_email_token = jwt.sign(
         {

@@ -35,15 +35,54 @@ export async function getUserById(request, response) {
 }
 
 /*
+(Authenticated) GET /api/users/me
+    Devuelve el perfil completo del usuario de la sesion, incluyendo
+    foto_perfil y descripcion, que NO viajan dentro del JWT (el payload
+    del token queda chico: solo id, name y email)
+*/
+export async function getMe(request, response) {
+    const user = await user_repository.getById(request.user.id)
+
+    if (!user) {
+        throw new ServerError("User not found", 404)
+    }
+
+    return response.status(200).send(
+        {
+            message: "Perfil obtenido correctamente",
+            status: 200,
+            ok: true,
+            data: {
+                user: {
+                    id: user._id,
+                    nombre: user.nombre,
+                    email: user.email,
+                    foto_perfil: user.foto_perfil ?? null,
+                    descripcion: user.descripcion ?? ''
+                }
+            }
+        }
+    )
+}
+
+/*
 (Authenticated) PUT /api/users/me
-    Cambia el nombre del usuario de la sesion y devuelve un JWT re-firmado
-    con el nombre actualizado (ademas del usuario actualizado)
+    Cambia el nombre del usuario de la sesion y, opcionalmente, la descripcion
+    y la foto de perfil. Devuelve un JWT re-firmado con el nombre actualizado
+    (ademas del usuario actualizado con sus datos nuevos de perfil)
 */
 export async function updateMe(request, response) {
 
-    const { name } = request.body ?? {}
+    const { name, descripcion, foto_perfil } = request.body ?? {}
 
-    const { user_updated, auth_token } = await updateOwnProfile(request.user.id, name)
+    const { user_updated, auth_token } = await updateOwnProfile(
+        request.user.id,
+        {
+            name: name,
+            descripcion: descripcion,
+            foto_perfil: foto_perfil
+        }
+    )
 
     return response.status(200).send({
         message: "Perfil actualizado correctamente",
@@ -53,7 +92,9 @@ export async function updateMe(request, response) {
             user_updated: {
                 id: user_updated._id,
                 nombre: user_updated.nombre,
-                email: user_updated.email
+                email: user_updated.email,
+                foto_perfil: user_updated.foto_perfil ?? null,
+                descripcion: user_updated.descripcion ?? ''
             },
             auth_token: auth_token
         }
