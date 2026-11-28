@@ -5,12 +5,20 @@ import ServerError from '../utils/error.util.js'
 function authMiddleware (request, response, next){
     try{
 
-        const auth_header = request.headers.authorization 
-        if(!auth_header){
+        /*
+        El token llega por header Authorization (API REST) o, como fallback,
+        por query param ?token=... (feed SSE: el EventSource del navegador no
+        puede enviar headers).
+        */
+        const auth_header = request.headers.authorization
+        const auth_token = auth_header
+            ? auth_header.split(' ')[1]
+            : request.query?.token
+
+        if(!auth_header && !auth_token){
             throw new ServerError('Auth header is requered', 400)
         }
-    
-        const auth_token = auth_header.split(' ')[1] 
+
         if(!auth_token){
             throw new ServerError('Auth header is malformed', 400)
         }

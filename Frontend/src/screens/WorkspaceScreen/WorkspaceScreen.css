@@ -801,7 +801,7 @@ body.ws-resizing {
 
 /* ---------- Composer ---------- */
 
-/* Aviso de mensajes nuevos de otros miembros (WebSocket) */
+/* Aviso de mensajes nuevos de otros miembros (tiempo real por SSE) */
 .ws-new-messages {
   position: absolute;
   left: 50%;

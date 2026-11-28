@@ -1319,6 +1319,65 @@ const openapi_document = {
                     503: DATABASE_ERROR[503]
                 }
             }
+        },
+
+        '/api/workspaces/{workspace_id}/channels/{channel_id}/events': {
+            get: {
+                tags: ['Channels'],
+                summary: 'Suscribirse al feed en tiempo real del canal (SSE)',
+                operationId: 'streamChannelEvents',
+                description: [
+                    'Abre una conexion **Server-Sent Events** (`text/event-stream`) y mantiene la respuesta abierta mientras el cliente escuche.',
+                    '',
+                    'Eventos que emite:',
+                    '- `connected`: evento de bienvenida, `data` = `{ "canal_id": "..." }`.',
+                    '- `mensaje-nuevo`: `data` = `{ "canal_id": "...", "mensaje": { mensaje_id, contenido, fecha_creacion, autor } }`. No se emite al autor del mensaje.',
+                    '',
+                    'La conexion recibe comentarios `":ping"` como heartbeat para mantenerse viva a traves de proxies.',
+                    '',
+                    'Como `EventSource` no puede enviar headers, el token JWT se acepta por query param: `?token=<auth_token>`.'
+                ].join('\n'),
+                security: [{ bearerAuth: [] }],
+                parameters: [
+                    { $ref: '#/components/parameters/WorkspaceId' },
+                    { $ref: '#/components/parameters/ChannelId' },
+                    {
+                        name: 'token',
+                        in: 'query',
+                        required: false,
+                        description: 'Alternativa al header `Authorization` para el feed SSE (EventSource no soporta headers). Usa el mismo JWT de la API.',
+                        schema: { type: 'string' }
+                    }
+                ],
+                responses: {
+                    200: {
+                        description: 'Stream de eventos abierto. Cada evento llega como `event: <nombre>\\ndata: <json>\\n\\n`.',
+                        content: {
+                            'text/event-stream': {
+                                schema: { type: 'string' },
+                                example: 'event: mensaje-nuevo\ndata: {"canal_id":"6ab01f9a190ff6061955c8a1","mensaje":{"mensaje_id":"6ab01f9a190ff6061955c8b0","contenido":"¡Hola equipo!","fecha_creacion":"2026-11-15T19:02:00.000Z","autor":{"member_id":"6ab01f9a190ff6061955c890","nombre":"maria"}}}\n\n'
+                            }
+                        }
+                    },
+                    400: AUTH_ERRORS[400],
+                    401: AUTH_ERRORS[401],
+                    403: error_response(
+                        'El usuario autenticado no es miembro del workspace.',
+                        [
+                            ['no_miembro', 403, 'No eres miembro de este espacio de trabajo']
+                        ]
+                    ),
+                    404: error_response(
+                        'No existe el workspace, o el canal no pertenece a ese workspace.',
+                        [
+                            ['workspace_no_encontrado', 404, 'Workspace no encontrado'],
+                            ['canal_no_encontrado', 404, 'Canal no encontrado']
+                        ]
+                    ),
+                    500: INTERNAL_ERROR[500],
+                    503: DATABASE_ERROR[503]
+                }
+            }
         }
     },
 

@@ -6,7 +6,6 @@ import useChannelRealtime from '../../hooks/useChannelRealtime'
 import { getSessionUser } from '../../utils/session.util'
 import { findDefaultChannel, groupChannelsByCategory } from '../../utils/channel.util'
 import { createChannel, createChannelMessage, deleteChannel, getChannelMessages } from '../../services/channelsService'
-import { isSocketConnected, sendChannelMessage } from '../../services/socketService'
 import WorkspaceRail from './components/WorkspaceRail'
 import ChannelSidebar from './components/ChannelSidebar'
 import ChatArea from './components/ChatArea'
@@ -253,9 +252,10 @@ function WorkspaceScreen() {
     ?? default_channel
   const active_channel_id = active_channel?.canal_id ?? null
 
-  // Tiempo real del canal activo: los mensajes de otros miembros se avisan
-  // con el boton "Hay nuevos mensajes"; el usuario recarga cuando quiere.
+  // Tiempo real del canal activo (SSE): los mensajes de otros miembros se
+  // avisan con el boton "Hay nuevos mensajes"; el usuario recarga cuando quiere.
   useChannelRealtime({
+    workspace_id,
     channel_id: active_channel_id,
     on_new_message: handleNewChannelMessage,
     on_reconnect: reloadMessages
@@ -336,23 +336,13 @@ function WorkspaceScreen() {
       return null
     }
 
-    let message_created = null
+    const response_body = await createChannelMessage(
+      workspace_id,
+      active_channel_id,
+      content
+    )
 
-    if (isSocketConnected()) {
-      // Con WebSocket abierto el mensaje viaja por el socket: la misma
-      // instancia que lo persiste avisa a los demas miembros del canal.
-      message_created = await sendChannelMessage(active_channel_id, content)
-    }
-    else {
-      // Sin socket disponible se usa el endpoint REST de siempre.
-      const response_body = await createChannelMessage(
-        workspace_id,
-        active_channel_id,
-        content
-      )
-
-      message_created = response_body?.data?.message_created ?? null
-    }
+    const message_created = response_body?.data?.message_created ?? null
 
     if (message_created) {
       set_messages((current_messages) => [...current_messages, message_created])

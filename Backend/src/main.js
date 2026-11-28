@@ -1,6 +1,4 @@
-import http from 'node:http'
 import connectMongoDB from "./config/mongo.config.js";
-
 //connectMongoDB()
 
 
@@ -13,7 +11,6 @@ import cors from 'cors'
 import swaggerUi from 'swagger-ui-express'
 import ENVIRONMENT from "./config/environment.config.js";
 import openapi_document from './docs/openapi.document.js'
-import { createRealtimeServer } from './realtime/socket.server.js'
 
 
 const PORT = ENVIRONMENT.PORT || 8080
@@ -76,19 +73,15 @@ app.use(
 
 
 /*
-Servidor HTTP compartido entre Express (API REST) y Socket.IO (WebSockets).
-Vercel espera que la funcion exporte el servidor HTTP como default export:
-la plataforma se encarga del upgrade de las conexiones WebSocket.
-
 En desarrollo local levantamos el puerto nosotros; en Vercel el listen lo
 maneja la plataforma (por eso se verifica process.env.VERCEL).
+El push en tiempo real (mensajes nuevos) viaja por SSE en
+/api/workspaces/:workspace_id/channels/:channel_id/events, sobre este mismo
+server HTTP de Express.
 */
-const server = http.createServer(app)
-
-createRealtimeServer(server)
 
 if (!process.env.VERCEL) {
-    server.listen(
+    app.listen(
         PORT,
         () => {
             console.log(
@@ -98,5 +91,5 @@ if (!process.env.VERCEL) {
     )
 }
 
-export default server
+export default app
 

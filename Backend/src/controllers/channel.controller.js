@@ -1,7 +1,10 @@
 import mongoose from "mongoose"
 import channel_repository from "../repositories/channel.repository.js"
 import channel_message_repository from "../repositories/channelMessage.repository.js"
-import { emitNewChannelMessage } from "../realtime/realtime.emitter.js"
+import {
+    emitNewChannelMessage,
+    subscribeToChannelEvents
+} from "../realtime/eventStream.emitter.js"
 import ServerError from "../utils/error.util.js"
 import { DEFAULT_CHANNEL_NAME, toChannelResponse } from "../utils/channel.util.js"
 import { toChannelMessageResponse } from "../utils/channelMessage.util.js"
@@ -156,8 +159,8 @@ export async function createChannelMessage(request, response) {
 
     const message_response = toChannelMessageResponse(message_created)
 
-    /* Avisa por WebSocket a los miembros suscritos al canal (si esta instancia
-       tiene el servidor realtime activo). */
+    /* Avisa por SSE a los miembros con el canal abierto (el propio autor ya
+       agrego el mensaje localmente: el emitter no se lo reenvia). */
     emitNewChannelMessage(channel._id, message_response)
 
     return response.status(201).send({
@@ -168,4 +171,42 @@ export async function createChannelMessage(request, response) {
             message_created: message_response
         }
     })
+}
+
+
+/*
+Feed en tiempo real del canal con Server-Sent Events (GET .../events).
+
+- Mantiene la respuesta abierta (text/event-stream) suscripta al canal.
+- Primero emite un evento `connected` de bienvenida con el id del canal.
+- Un heartbeat periodico (comentarios ":ping") mantiene viva la conexion
+  a traves de proxies y evita que el cliente corte por inactividad.
+- Al cerrarse (el cliente, la plataforma de hosting, o un error) el cleanup
+  del emitter corta el heartbeat y saca la conexion del registro.
+*/
+export async function streamChannelEvents(request, response) {
+
+    const channel = await getWorkspaceChannelOrThrow(request)
+
+    response.writeHead(200, {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache, no-transform',
+        Connection: 'keep-alive',
+        'X-Accel-Buffering': 'no'
+    })
+
+    response.write(
+        `event: connected\ndata: ${JSON.stringify({ canal_id: String(channel._id) })}\n\n`
+    )
+
+    const unsubscribe = subscribeToChannelEvents(
+        channel._id,
+        response,
+        request.membership._id
+    )
+
+    /* El emitter corta el heartbeat y desuscribe en el cierre del stream:
+       aca solo garantizamos que, si el request termino de otra forma, la
+       conexion no quede colgada en el registro. */
+    request.on('close', unsubscribe)
 }

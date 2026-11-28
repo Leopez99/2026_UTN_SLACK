@@ -8,7 +8,6 @@ import logo_mark from '../../assets/Logos dislack/Logo dislack.png'
 import logo_wordmark from '../../assets/Logos dislack/Titulo dislack.png'
 import HomeBackground from '../../Components/HomeBackground/HomeBackground'
 import { IconSettings } from '../WorkspaceScreen/components/Icons'
-import { disconnectSocket } from '../../services/socketService'
 import './HomeScreen.css'
 
 function HomeScreeen() {
@@ -46,10 +45,10 @@ function HomeScreeen() {
     setCreateOpen(false)
   }
 
-  /* Cierre de sesion: se corta el socket, se descarta el token local y
-     el guard de rutas manda a /login. No hay sesion en el servidor (JWT). */
+  /* Cierre de sesion: se descarta el token local y el guard de rutas manda
+     a /login. No hay sesion en el servidor (JWT) ni conexion que cortar:
+     la conexion SSE del workspace se cierra al salir de esa pantalla. */
   function handleLogout() {
-    disconnectSocket()
     localStorage.removeItem('auth_token')
     navigate('/login')
   }

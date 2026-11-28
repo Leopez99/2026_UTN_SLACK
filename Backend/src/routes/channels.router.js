@@ -4,7 +4,8 @@ import {
     createChannelMessage,
     deleteChannel,
     getChannelMessages,
-    getChannels
+    getChannels,
+    streamChannelEvents
 } from '../controllers/channel.controller.js'
 import authMiddleware from '../middlewares/auth.middleware.js'
 import workspaceMiddleware from '../middlewares/workspace.middleware.js'
@@ -19,6 +20,7 @@ mergeParams: true para recibir el workspace_id desde la ruta padre.
 - DELETE /:channel_id                    (owner, admin)      eliminar un canal
 - GET    /:channel_id/messages           (cualquier miembro) listar mensajes
 - POST   /:channel_id/messages           (cualquier miembro) enviar un mensaje
+- GET    /:channel_id/events             (cualquier miembro) feed SSE en tiempo real
 */
 const channel_router = express.Router({ mergeParams: true })
 
@@ -48,6 +50,13 @@ channel_router.get(
     authMiddleware,
     workspaceMiddleware([]),
     getChannelMessages
+)
+
+channel_router.get(
+    '/:channel_id/events',
+    authMiddleware,
+    workspaceMiddleware([]),
+    streamChannelEvents
 )
 
 channel_router.post(

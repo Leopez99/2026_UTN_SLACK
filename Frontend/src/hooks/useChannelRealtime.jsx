@@ -1,44 +1,40 @@
 import { useEffect, useRef } from 'react'
-import { connectSocket } from '../services/socketService'
+import { createChannelEventSource } from '../services/channelEventsService'
 
 /*
-Tiempo real del canal abierto.
+Tiempo real del canal abierto (Server-Sent Events).
 
-- Se suscribe al room del canal cuando cambia `channel_id`.
+- Abre un EventSource del canal activo y lo cierra al cambiar de canal.
 - Entrega los mensajes de otros miembros en on_new_message (WorkspaceScreen
   decide mostrar el aviso de "Hay nuevos mensajes").
-- Si el socket reconecta (Vercel cierra las conexiones al llegar a la duracion
-  maxima de la Function) avisa con on_reconnect para resincronizar los datos.
+- EventSource se reconecta solo (Vercel cierra las conexiones al llegar a la
+  duracion maxima de la Function): on_reconnect avisa para resincronizar.
 
-El hook no guarda estado: solo conecta eventos del socket con los callbacks.
+El hook no guarda estado: solo conecta los eventos SSE con los callbacks.
 Los callbacks se leen desde un ref para no re-suscribir en cada render.
 */
 
-function useChannelRealtime({ channel_id, on_new_message, on_reconnect }) {
+const CHANNEL_MESSAGE_EVENT = 'mensaje-nuevo'
+
+function useChannelRealtime({ workspace_id, channel_id, on_new_message, on_reconnect }) {
   const callbacks_ref = useRef({ on_new_message, on_reconnect })
 
   callbacks_ref.current = { on_new_message, on_reconnect }
 
   useEffect(() => {
-    if (!channel_id) {
+    if (!workspace_id || !channel_id) {
       return undefined
     }
 
-    const socket = connectSocket()
+    const event_source = createChannelEventSource(workspace_id, channel_id)
 
-    if (!socket) {
+    if (!event_source) {
       return undefined
     }
 
-    let had_connected = socket.connected
-
-    function joinChannel() {
-      socket.emit('join_channel', { channel_id })
-    }
+    let had_connected = event_source.readyState === EventSource.OPEN
 
     function handleConnect() {
-      joinChannel()
-
       if (had_connected) {
         callbacks_ref.current.on_reconnect?.()
       }
@@ -46,7 +42,16 @@ function useChannelRealtime({ channel_id, on_new_message, on_reconnect }) {
       had_connected = true
     }
 
-    function handleNewMessage(event_payload) {
+    function handleNewMessage(event) {
+      let event_payload = null
+
+      try {
+        event_payload = JSON.parse(event.data)
+      }
+      catch {
+        return
+      }
+
       if (String(event_payload?.canal_id) !== String(channel_id)) {
         return
       }
@@ -54,19 +59,15 @@ function useChannelRealtime({ channel_id, on_new_message, on_reconnect }) {
       callbacks_ref.current.on_new_message?.(event_payload?.mensaje ?? null)
     }
 
-    if (socket.connected) {
-      joinChannel()
-    }
-
-    socket.on('connect', handleConnect)
-    socket.on('mensaje-nuevo', handleNewMessage)
+    event_source.addEventListener('open', handleConnect)
+    event_source.addEventListener(CHANNEL_MESSAGE_EVENT, handleNewMessage)
 
     return () => {
-      socket.off('connect', handleConnect)
-      socket.off('mensaje-nuevo', handleNewMessage)
-      socket.emit('leave_channel', { channel_id })
+      event_source.removeEventListener('open', handleConnect)
+      event_source.removeEventListener(CHANNEL_MESSAGE_EVENT, handleNewMessage)
+      event_source.close()
     }
-  }, [channel_id])
+  }, [workspace_id, channel_id])
 }
 
 export default useChannelRealtime

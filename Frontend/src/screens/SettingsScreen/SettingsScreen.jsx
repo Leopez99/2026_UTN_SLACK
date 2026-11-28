@@ -4,7 +4,6 @@ import useForm from '../../hooks/useForm'
 import { getAllWorkspaces } from '../../services/workspacesService'
 import { deleteMe, updateMe } from '../../services/userService'
 import { getSessionUser } from '../../utils/session.util'
-import { disconnectSocket } from '../../services/socketService'
 import './SettingsScreen.css'
 
 /*
@@ -134,9 +133,8 @@ function SettingsScreen() {
     try {
       await deleteMe()
 
-      /* Cuenta eliminada: se corta el realtime y se descarta la credencial.
-         El guard de rutas manda a /login */
-      disconnectSocket()
+      /* Cuenta eliminada: se descarta la credencial y el guard de rutas
+         manda a /login */
       localStorage.removeItem('auth_token')
       navigate('/login')
     }
